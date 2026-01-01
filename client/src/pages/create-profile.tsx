@@ -47,6 +47,7 @@ export default function CreateProfile() {
       otherDenomination: "",
       occupation: "",
       visaType: "",
+      height: "",
       aboutMe: "",
       partnerPreferences: "",
       photoUrl: "",
@@ -409,6 +410,48 @@ export default function CreateProfile() {
                             <SelectItem value="Australian Citizen">Australian Citizen</SelectItem>
                             <SelectItem value="Work Permit">Work Permit</SelectItem>
                             <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="height"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Height</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-height">
+                              <SelectValue placeholder="Select height" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="4'8&quot;">4'8" (142 cm)</SelectItem>
+                            <SelectItem value="4'9&quot;">4'9" (145 cm)</SelectItem>
+                            <SelectItem value="4'10&quot;">4'10" (147 cm)</SelectItem>
+                            <SelectItem value="4'11&quot;">4'11" (150 cm)</SelectItem>
+                            <SelectItem value="5'0&quot;">5'0" (152 cm)</SelectItem>
+                            <SelectItem value="5'1&quot;">5'1" (155 cm)</SelectItem>
+                            <SelectItem value="5'2&quot;">5'2" (157 cm)</SelectItem>
+                            <SelectItem value="5'3&quot;">5'3" (160 cm)</SelectItem>
+                            <SelectItem value="5'4&quot;">5'4" (163 cm)</SelectItem>
+                            <SelectItem value="5'5&quot;">5'5" (165 cm)</SelectItem>
+                            <SelectItem value="5'6&quot;">5'6" (168 cm)</SelectItem>
+                            <SelectItem value="5'7&quot;">5'7" (170 cm)</SelectItem>
+                            <SelectItem value="5'8&quot;">5'8" (173 cm)</SelectItem>
+                            <SelectItem value="5'9&quot;">5'9" (175 cm)</SelectItem>
+                            <SelectItem value="5'10&quot;">5'10" (178 cm)</SelectItem>
+                            <SelectItem value="5'11&quot;">5'11" (180 cm)</SelectItem>
+                            <SelectItem value="6'0&quot;">6'0" (183 cm)</SelectItem>
+                            <SelectItem value="6'1&quot;">6'1" (185 cm)</SelectItem>
+                            <SelectItem value="6'2&quot;">6'2" (188 cm)</SelectItem>
+                            <SelectItem value="6'3&quot;">6'3" (191 cm)</SelectItem>
+                            <SelectItem value="6'4&quot;">6'4" (193 cm)</SelectItem>
+                            <SelectItem value="6'5&quot;">6'5" (196 cm)</SelectItem>
+                            <SelectItem value="6'6&quot;">6'6" (198 cm)</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />

@@ -21,6 +21,7 @@ export const profiles = pgTable("profiles", {
   otherDenomination: text("other_denomination"), // Free-form field when denomination is "Other"
   occupation: text("occupation"),
   visaType: text("visa_type"), // H1B, Green Card, Citizen, OPT, etc.
+  height: text("height"), // Height in feet/inches format e.g. "5'8"
   aboutMe: text("about_me"),
   partnerPreferences: text("partner_preferences"),
   photoUrl: text("photo_url"),

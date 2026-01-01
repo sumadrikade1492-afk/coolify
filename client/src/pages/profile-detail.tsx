@@ -161,6 +161,10 @@ export default function ProfileDetail() {
                      <span className="font-medium">{profile.occupation || "N/A"}</span>
                    </div>
                    <div className="grid grid-cols-2 gap-2">
+                     <span className="text-muted-foreground">Height</span>
+                     <span className="font-medium">{profile.height || "N/A"}</span>
+                   </div>
+                   <div className="grid grid-cols-2 gap-2">
                      <span className="text-muted-foreground">Visa Type</span>
                      <span className="font-medium">{profile.visaType || "N/A"}</span>
                    </div>

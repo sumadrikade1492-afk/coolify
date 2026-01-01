@@ -1,7 +1,7 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Briefcase, Church } from "lucide-react";
+import { MapPin, Briefcase, Church, Ruler, CreditCard } from "lucide-react";
 import { Link } from "wouter";
 import type { Profile } from "@shared/schema";
 import { motion } from "framer-motion";
@@ -59,15 +59,20 @@ export function ProfileCard({ profile }: { profile: Profile }) {
             <MapPin className="w-4 h-4 text-primary" />
             <span className="truncate">{profile.city}, {profile.country}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Briefcase className="w-4 h-4 text-primary" />
-            <span className="truncate">{profile.occupation || "N/A"}</span>
-          </div>
+          {profile.height && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Ruler className="w-4 h-4 text-primary" />
+              <span className="truncate">{profile.height}</span>
+            </div>
+          )}
+          {profile.visaType && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CreditCard className="w-4 h-4 text-primary" />
+              <span className="truncate">{profile.visaType}</span>
+            </div>
+          )}
           
           <div className="pt-2 flex flex-wrap gap-2">
-            <Badge variant="outline" className="text-xs bg-secondary/30 border-secondary">
-              Created by {profile.createdBy}
-            </Badge>
             {profile.phoneVerified && (
               <Badge variant="default" className="text-xs bg-green-600 hover:bg-green-700">
                 Verified
