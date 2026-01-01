@@ -1,21 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Layout } from "@/components/layout";
+import { ProfileCard } from "@/components/profile-card";
+import { useProfiles } from "@/hooks/use-profiles";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { MapPin, Briefcase, Book } from "lucide-react";
 import { useState } from "react";
-import type { Profile } from "@shared/schema";
+import { Search, Loader2, FilterX } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 export default function Profiles() {
-  const { isAuthenticated } = useAuth();
   const [filters, setFilters] = useState({
     gender: "",
     denomination: "",
@@ -24,155 +17,139 @@ export default function Profiles() {
     maxAge: "",
   });
 
-  const queryString = new URLSearchParams(
-    Object.fromEntries(Object.entries(filters).filter(([_, v]) => v))
-  ).toString();
+  // Debounced/applied filters could be added here for perf, 
+  // but for now we pass directly to hook which handles re-fetching.
+  // We'll use a separate state for "applied" to prevent fetching on every keystroke if needed,
+  // but for simplicity with small data, direct is fine.
+  
+  const { data: profiles, isLoading, error } = useProfiles(filters as any);
 
-  const { data: profiles, isLoading } = useQuery<Profile[]>({
-    queryKey: ["/api/profiles", queryString],
-    queryFn: async () => {
-      const res = await fetch(`/api/profiles${queryString ? `?${queryString}` : ""}`);
-      if (!res.ok) throw new Error("Failed to fetch profiles");
-      return res.json();
-    },
-  });
+  const resetFilters = () => {
+    setFilters({
+      gender: "",
+      denomination: "",
+      location: "",
+      minAge: "",
+      maxAge: "",
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header />
+    <Layout>
+      <div className="bg-primary/5 py-12 mb-8">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">Find Your Partner</h1>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Browse through our verified profiles to find someone who shares your faith and values.
+          </p>
+        </div>
+      </div>
 
-      <main className="container mx-auto px-4 py-8 flex-1">
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Search Filters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <Select
-                value={filters.gender}
-                onValueChange={(v) => setFilters({ ...filters, gender: v })}
+      <div className="container mx-auto px-4 pb-20">
+        {/* Filters */}
+        <div className="bg-card border rounded-xl p-6 shadow-sm mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+            <div className="space-y-2">
+              <Label>Looking For</Label>
+              <Select 
+                value={filters.gender} 
+                onValueChange={(val) => setFilters(prev => ({ ...prev, gender: val }))}
               >
-                <SelectTrigger data-testid="select-gender">
-                  <SelectValue placeholder="Gender" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Any Gender" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Male">Groom (Male)</SelectItem>
+                  <SelectItem value="Female">Bride (Female)</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
 
-              <Input
-                placeholder="Denomination"
-                value={filters.denomination}
-                onChange={(e) => setFilters({ ...filters, denomination: e.target.value })}
-                data-testid="input-denomination"
-              />
+            <div className="space-y-2">
+              <Label>Denomination</Label>
+              <Select 
+                value={filters.denomination} 
+                onValueChange={(val) => setFilters(prev => ({ ...prev, denomination: val }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Any" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Catholic">Catholic</SelectItem>
+                  <SelectItem value="Pentecostal">Pentecostal</SelectItem>
+                  <SelectItem value="Orthodox">Orthodox</SelectItem>
+                  <SelectItem value="Protestant">Protestant</SelectItem>
+                  <SelectItem value="Jacobite">Jacobite</SelectItem>
+                  <SelectItem value="Marthoma">Marthoma</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <Input
-                placeholder="Location"
+            <div className="space-y-2">
+              <Label>Location</Label>
+              <Input 
+                placeholder="City or Country" 
                 value={filters.location}
-                onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-                data-testid="input-location"
-              />
-
-              <Input
-                type="number"
-                placeholder="Min Age"
-                value={filters.minAge}
-                onChange={(e) => setFilters({ ...filters, minAge: e.target.value })}
-                data-testid="input-min-age"
-              />
-
-              <Input
-                type="number"
-                placeholder="Max Age"
-                value={filters.maxAge}
-                onChange={(e) => setFilters({ ...filters, maxAge: e.target.value })}
-                data-testid="input-max-age"
+                onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
               />
             </div>
-          </CardContent>
-        </Card>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i}>
-                <CardHeader>
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-24" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-20 w-full" />
-                </CardContent>
-              </Card>
-            ))}
+            <div className="space-y-2">
+              <Label>Min Age</Label>
+              <Input 
+                type="number" 
+                placeholder="18" 
+                value={filters.minAge}
+                onChange={(e) => setFilters(prev => ({ ...prev, minAge: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Max Age</Label>
+              <Input 
+                type="number" 
+                placeholder="60" 
+                value={filters.maxAge}
+                onChange={(e) => setFilters(prev => ({ ...prev, maxAge: e.target.value }))}
+              />
+            </div>
+
+            <Button 
+              variant="outline" 
+              onClick={resetFilters}
+              className="w-full text-muted-foreground hover:text-foreground"
+            >
+              <FilterX className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
           </div>
-        ) : profiles && profiles.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {profiles.map((profile) => (
-              <Link key={profile.id} href={`/profile/${profile.id}`}>
-                <Card className="hover-elevate cursor-pointer h-full" data-testid={`card-profile-${profile.id}`}>
-                  <CardHeader>
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-16 w-16">
-                        <AvatarImage src={profile.photoUrl || undefined} />
-                        <AvatarFallback>
-                          {profile.firstName[0]}{profile.lastName[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">
-                          {profile.firstName} {profile.lastName}
-                        </CardTitle>
-                        <CardDescription className="flex items-center gap-1">
-                          {profile.age} years old
-                        </CardDescription>
-                        <div className="flex gap-2 mt-2 flex-wrap">
-                          <Badge variant="secondary">{profile.gender}</Badge>
-                          <Badge variant="outline">{profile.denomination}</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        <span>{profile.location}</span>
-                      </div>
-                      {profile.occupation && (
-                        <div className="flex items-center gap-2">
-                          <Briefcase className="h-4 w-4" />
-                          <span>{profile.occupation}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <Book className="h-4 w-4" />
-                        <span>Created by: {profile.createdBy}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+        </div>
+
+        {/* Results */}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+            <p className="text-muted-foreground">Finding matches...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 text-red-500">
+            Error loading profiles. Please try again.
+          </div>
+        ) : profiles?.length === 0 ? (
+          <div className="text-center py-20 bg-muted/30 rounded-2xl">
+            <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">No profiles found</h3>
+            <p className="text-muted-foreground mb-6">Try adjusting your search filters to see more results.</p>
+            <Button onClick={resetFilters}>Clear Filters</Button>
           </div>
         ) : (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No profiles found. Be the first to create one!</p>
-              {isAuthenticated && (
-                <Link href="/create-profile">
-                  <Button className="mt-4 bg-accent text-accent-foreground" data-testid="button-create-first">Create Profile</Button>
-                </Link>
-              )}
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {profiles?.map((profile) => (
+              <ProfileCard key={profile.id} profile={profile} />
+            ))}
+          </div>
         )}
-      </main>
-
-      <Footer />
-    </div>
+      </div>
+    </Layout>
   );
 }

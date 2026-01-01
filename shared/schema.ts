@@ -15,6 +15,7 @@ export const profiles = pgTable("profiles", {
   denomination: text("denomination").notNull(),
   location: text("location").notNull(),
   occupation: text("occupation"),
+  visaType: text("visa_type"), // H1B, Green Card, Citizen, OPT, etc.
   aboutMe: text("about_me"),
   partnerPreferences: text("partner_preferences"),
   photoUrl: text("photo_url"),

@@ -1,166 +1,192 @@
-import { useQuery } from "@tanstack/react-query";
+import { Layout } from "@/components/layout";
+import { useProfile } from "@/hooks/use-profiles";
 import { useRoute, Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { MapPin, Briefcase, Book, Calendar, User } from "lucide-react";
-import type { Profile } from "@shared/schema";
+import { Card } from "@/components/ui/card";
+import { MapPin, Briefcase, Church, User, Heart, Phone, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 
 export default function ProfileDetail() {
   const [, params] = useRoute("/profile/:id");
-  const profileId = params?.id;
+  const id = parseInt(params?.id || "0");
+  const { data: profile, isLoading } = useProfile(id);
+  const { isAuthenticated } = useAuth();
+  const [contactOpen, setContactOpen] = useState(false);
 
-  const { data: profile, isLoading, error } = useQuery<Profile>({
-    queryKey: ["/api/profiles", profileId],
-    queryFn: async () => {
-      const res = await fetch(`/api/profiles/${profileId}`);
-      if (!res.ok) {
-        if (res.status === 404) throw new Error("Profile not found");
-        throw new Error("Failed to fetch profile");
-      }
-      return res.json();
-    },
-    enabled: !!profileId,
-  });
+  if (isLoading) return <Layout><div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-primary w-10 h-10" /></div></Layout>;
+  
+  if (!profile) return (
+    <Layout>
+       <div className="container py-20 text-center">
+         <h2 className="text-2xl font-bold mb-4">Profile Not Found</h2>
+         <Link href="/profiles"><Button>Back to Profiles</Button></Link>
+       </div>
+    </Layout>
+  );
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header />
-        <main className="container mx-auto px-4 py-8 max-w-2xl flex-1">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-24 w-24 rounded-full" />
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-40 w-full" />
-            </CardContent>
-          </Card>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (error || !profile) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header />
-        <main className="container mx-auto px-4 py-8 max-w-2xl flex-1">
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">Profile not found</p>
-              <Link href="/profiles">
-                <Button className="mt-4 bg-accent text-accent-foreground" data-testid="button-back-to-profiles">Back to Profiles</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  const photoUrl = profile.photoUrl || `https://ui-avatars.com/api/?name=${profile.firstName}+${profile.lastName}&background=fde68a&color=92400e&size=400`;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header />
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
+        <Link href="/profiles" className="inline-flex items-center text-muted-foreground hover:text-primary mb-6 transition-colors">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Browse
+        </Link>
 
-      <main className="container mx-auto px-4 py-8 max-w-2xl flex-1">
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.photoUrl || undefined} />
-                <AvatarFallback className="text-2xl">
-                  {profile.firstName[0]}{profile.lastName[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-center sm:text-left">
-                <CardTitle className="text-2xl" data-testid="text-profile-name">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Photo & Quick Actions */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="p-4 border-none shadow-lg overflow-hidden">
+               <div className="aspect-[3/4] rounded-lg overflow-hidden bg-muted mb-4 relative">
+                 <img 
+                   src={photoUrl} 
+                   alt={profile.firstName} 
+                   className="w-full h-full object-cover"
+                 />
+               </div>
+               
+               <div className="space-y-3">
+                 <Dialog open={contactOpen} onOpenChange={setContactOpen}>
+                   <DialogTrigger asChild>
+                     <Button className="w-full text-lg h-12" size="lg">
+                       Contact Profile
+                     </Button>
+                   </DialogTrigger>
+                   <DialogContent>
+                     <DialogHeader>
+                       <DialogTitle>Contact Information</DialogTitle>
+                       <DialogDescription>
+                         {isAuthenticated ? (
+                           <div className="py-4 space-y-4">
+                             <div className="p-4 bg-muted rounded-lg border">
+                               <p className="font-semibold text-lg flex items-center gap-2">
+                                 <Phone className="w-5 h-5 text-primary" />
+                                 {profile.phoneNumber || "No phone number listed"}
+                               </p>
+                               <p className="text-sm text-muted-foreground mt-1">
+                                 Please mention you found them on NRI Christian Matrimony.
+                               </p>
+                             </div>
+                             {profile.phoneVerified && (
+                               <div className="flex items-center text-green-600 text-sm font-medium">
+                                 <CheckCircle className="w-4 h-4 mr-2" />
+                                 Phone Number Verified
+                               </div>
+                             )}
+                           </div>
+                         ) : (
+                           <div className="py-6 text-center">
+                             <p className="mb-4">You must be logged in to view contact details.</p>
+                             <a href="/api/login"><Button>Login Now</Button></a>
+                           </div>
+                         )}
+                       </DialogDescription>
+                     </DialogHeader>
+                   </DialogContent>
+                 </Dialog>
+                 
+                 <Button variant="outline" className="w-full">
+                   <Heart className="w-4 h-4 mr-2" /> Shortlist
+                 </Button>
+               </div>
+            </Card>
+
+            <Card className="p-6 bg-primary/5 border-primary/20">
+              <h3 className="font-serif font-bold text-lg mb-4">Profile Summary</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between border-b pb-2 border-primary/10">
+                  <span className="text-muted-foreground">Profile ID</span>
+                  <span className="font-mono font-bold">{profile.id}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2 border-primary/10">
+                  <span className="text-muted-foreground">Posted By</span>
+                  <span className="font-medium">{profile.createdBy}</span>
+                </div>
+                <div className="flex justify-between border-b pb-2 border-primary/10">
+                  <span className="text-muted-foreground">Active</span>
+                  <span className="font-medium">Recently</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Right Column: Details */}
+          <div className="lg:col-span-2 space-y-8">
+            <div>
+              <div className="flex items-center gap-4 mb-2">
+                <h1 className="text-4xl font-serif font-bold text-foreground">
                   {profile.firstName} {profile.lastName}
-                </CardTitle>
-                <CardDescription className="text-lg mt-1">
-                  {profile.age} years old
-                </CardDescription>
-                <div className="flex gap-2 mt-3 flex-wrap justify-center sm:justify-start">
-                  <Badge>{profile.gender}</Badge>
-                  <Badge variant="secondary">{profile.denomination}</Badge>
-                </div>
+                </h1>
+                {profile.phoneVerified && (
+                  <Badge className="bg-green-600 hover:bg-green-700">Verified</Badge>
+                )}
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Location</p>
-                  <p className="font-medium" data-testid="text-location">{profile.location}</p>
-                </div>
-              </div>
-              
-              {profile.occupation && (
-                <div className="flex items-center gap-3">
-                  <Briefcase className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Occupation</p>
-                    <p className="font-medium" data-testid="text-occupation">{profile.occupation}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center gap-3">
-                <Book className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Denomination</p>
-                  <p className="font-medium" data-testid="text-denomination">{profile.denomination}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <User className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Profile Created By</p>
-                  <p className="font-medium" data-testid="text-created-by">{profile.createdBy}</p>
-                </div>
-              </div>
-
-              {profile.createdAt && (
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Member Since</p>
-                    <p className="font-medium">
-                      {new Date(profile.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              )}
+              <p className="text-xl text-muted-foreground mb-6 flex items-center gap-2">
+                <MapPin className="w-5 h-5" /> {profile.location}
+              </p>
             </div>
 
-            {profile.aboutMe && (
-              <div>
-                <h3 className="font-semibold mb-2">About</h3>
-                <p className="text-muted-foreground" data-testid="text-about">{profile.aboutMe}</p>
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <Card className="p-6">
+                 <h3 className="font-serif font-bold text-xl mb-4 text-primary flex items-center gap-2">
+                   <User className="w-5 h-5" /> Basic Details
+                 </h3>
+                 <div className="space-y-4">
+                   <div className="grid grid-cols-2 gap-2">
+                     <span className="text-muted-foreground">Age</span>
+                     <span className="font-medium">{profile.age} Years</span>
+                   </div>
+                   <div className="grid grid-cols-2 gap-2">
+                     <span className="text-muted-foreground">Gender</span>
+                     <span className="font-medium">{profile.gender}</span>
+                   </div>
+                   <div className="grid grid-cols-2 gap-2">
+                     <span className="text-muted-foreground">Occupation</span>
+                     <span className="font-medium">{profile.occupation || "N/A"}</span>
+                   </div>
+                   <div className="grid grid-cols-2 gap-2">
+                     <span className="text-muted-foreground">Visa Type</span>
+                     <span className="font-medium">{profile.visaType || "N/A"}</span>
+                   </div>
+                 </div>
+               </Card>
 
-            {profile.partnerPreferences && (
-              <div>
-                <h3 className="font-semibold mb-2">Partner Preferences</h3>
-                <p className="text-muted-foreground" data-testid="text-preferences">{profile.partnerPreferences}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </main>
+               <Card className="p-6">
+                 <h3 className="font-serif font-bold text-xl mb-4 text-primary flex items-center gap-2">
+                   <Church className="w-5 h-5" /> Religious Details
+                 </h3>
+                 <div className="space-y-4">
+                   <div className="grid grid-cols-2 gap-2">
+                     <span className="text-muted-foreground">Denomination</span>
+                     <span className="font-medium">{profile.denomination}</span>
+                   </div>
+                   <div className="grid grid-cols-2 gap-2">
+                     <span className="text-muted-foreground">Community</span>
+                     <span className="font-medium">Christian</span>
+                   </div>
+                 </div>
+               </Card>
+            </div>
 
-      <Footer />
-    </div>
+            <Card className="p-6">
+              <h3 className="font-serif font-bold text-xl mb-4 text-primary">About {profile.firstName}</h3>
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                {profile.aboutMe || "No description provided."}
+              </p>
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="font-serif font-bold text-xl mb-4 text-primary">Partner Preferences</h3>
+              <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                {profile.partnerPreferences || "No specific preferences listed."}
+              </p>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </Layout>
   );
 }
