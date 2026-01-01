@@ -29,24 +29,31 @@ Preferred communication style: Simple, everyday language.
 - **ORM**: Drizzle ORM with Zod validation schemas
 - **Schema Location**: `shared/schema.ts` defines all database tables
 - **Key Tables**:
-  - `users`: Stores authenticated user information (required for Replit Auth)
+  - `users`: Stores authenticated user information with admin flag (required for Replit Auth)
   - `sessions`: Session storage (required for Replit Auth)
   - `profiles`: Matrimony profile data linked to users
+  - `login_logs`: Tracks user logins for daily reports
 
 ### Code Organization
 - **`client/`**: React frontend application
 - **`server/`**: Express backend with API routes
 - **`shared/`**: Shared types, schemas, and route definitions between frontend and backend
 - **`server/replit_integrations/auth/`**: Replit Auth implementation
+- **`server/gmail.ts`**: Gmail integration for sending emails
 
 ### API Structure
 Routes are defined in `shared/routes.ts` with Zod schemas for input validation. The server implements these routes in `server/routes.ts`. Key endpoints:
 - `GET /api/profiles` - List profiles with optional filters
 - `GET /api/profiles/:id` - Get single profile
 - `POST /api/profiles` - Create profile (authenticated)
-- `PATCH /api/profiles/:id` - Update profile (authenticated)
+- `PUT /api/profiles/:id` - Update profile (authenticated, owner or admin)
 - `DELETE /api/profiles/:id` - Delete profile (authenticated)
 - `GET /api/auth/user` - Get current authenticated user
+
+### Admin API Endpoints
+- `GET /api/admin/profiles` - Get all profiles (admin only)
+- `POST /api/admin/set-admin` - Set user admin status (admin only)
+- `POST /api/admin/send-login-report` - Manually trigger login report (admin only)
 
 ## External Dependencies
 
@@ -74,6 +81,12 @@ Routes are defined in `shared/routes.ts` with Zod schemas for input validation. 
 - Requires `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` environment variables
 - Verification codes expire after 10 minutes
 
+### Email Integration (Gmail)
+- Uses Replit Gmail connector for sending transactional emails
+- Sends email to opsauto3@gmail.com when profiles are created or updated
+- Daily login report sent automatically at midnight
+- Implementation in `server/gmail.ts`
+
 ### Session Configuration
 - Sessions are configured to last 30 days (1 month) for user convenience
 
@@ -84,9 +97,18 @@ Routes are defined in `shared/routes.ts` with Zod schemas for input validation. 
   - `client/src/pages/profiles.tsx` - Country filter dropdown
 - To expand to other countries, uncomment the country options in both files
 
-### Pending Features
-- **Email Integration**: SendGrid was not configured (user did not provide credentials). To add email functionality:
-  1. Get a SendGrid API key
-  2. Add `SENDGRID_API_KEY` as an environment secret
-  3. Implement email service in `server/sendgrid.ts`
-  4. Add welcome email on registration
+### Admin Features
+- Admin users can edit any profile (not just their own)
+- Admin flag stored in `users.is_admin` column
+- To make a user an admin, run SQL: `UPDATE users SET is_admin = true WHERE email = 'admin@example.com';`
+- Admin can access `/api/admin/*` endpoints
+
+### Mandatory Profile Fields
+All profile fields are now mandatory except:
+- `photoUrl` (optional photo upload)
+- `otherDenomination` (only required when denomination is "Other")
+- `createdByName` (only required when createdBy is not "Self")
+
+### Privacy Features
+- Search results show "Profile #ID" instead of full names
+- Full name only visible on detailed profile page after clicking

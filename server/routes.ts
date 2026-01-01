@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { api, phoneVerificationApi } from "@shared/routes";
 import { z } from "zod";
 import { generateVerificationCode, sendVerificationSMS, isTwilioConfigured } from "./twilio";
+import { sendProfileNotification, sendDailyLoginReport } from "./gmail";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -58,6 +59,21 @@ export async function registerRoutes(
       }
       
       const profile = await storage.createProfile(userId, input, phoneVerified);
+      
+      // Send email notification
+      try {
+        await sendProfileNotification('created', profile.id, {
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          gender: profile.gender,
+          city: profile.city,
+          country: profile.country,
+          denomination: profile.denomination,
+        });
+      } catch (emailError) {
+        console.error('Failed to send profile creation email:', emailError);
+      }
+      
       res.status(201).json(profile);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -80,13 +96,29 @@ export async function registerRoutes(
         return res.status(404).json({ message: 'Profile not found' });
       }
 
-      // Authorization check: Ensure user owns the profile
-      if (existing.userId !== userId) {
+      // Authorization check: Ensure user owns the profile OR is admin
+      const isAdmin = await storage.isUserAdmin(userId);
+      if (existing.userId !== userId && !isAdmin) {
         return res.status(401).json({ message: 'Unauthorized' });
       }
 
       const input = api.profiles.update.input.parse(req.body);
       const updated = await storage.updateProfile(profileId, input);
+      
+      // Send email notification
+      try {
+        await sendProfileNotification('updated', updated.id, {
+          firstName: updated.firstName,
+          lastName: updated.lastName,
+          gender: updated.gender,
+          city: updated.city,
+          country: updated.country,
+          denomination: updated.denomination,
+        });
+      } catch (emailError) {
+        console.error('Failed to send profile update email:', emailError);
+      }
+      
       res.json(updated);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -173,8 +205,71 @@ export async function registerRoutes(
     }
   });
 
+  // Admin Routes
+  
+  // Get all profiles (admin only)
+  app.get("/api/admin/profiles", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const isAdmin = await storage.isUserAdmin(userId);
+      
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const profiles = await storage.getProfiles();
+      res.json(profiles);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Set user as admin (admin only - for initial setup, first user can use SQL)
+  app.post("/api/admin/set-admin", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const isAdmin = await storage.isUserAdmin(userId);
+      
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const { targetUserId, setAdmin } = req.body;
+      await storage.setUserAdmin(targetUserId, setAdmin);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Manually trigger daily login report (admin only)
+  app.post("/api/admin/send-login-report", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const isAdmin = await storage.isUserAdmin(userId);
+      
+      if (!isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const logins = await storage.getTodaysLogins();
+      await sendDailyLoginReport(logins.map(l => ({
+        userId: l.userId,
+        username: l.username || 'Unknown',
+        loginTime: l.loginTime || new Date(),
+      })));
+      res.json({ success: true, message: "Login report sent" });
+    } catch (error) {
+      console.error("Failed to send login report:", error);
+      res.status(500).json({ message: "Failed to send login report" });
+    }
+  });
+
   // Seed Data
   await seedDatabase();
+  
+  // Schedule daily login report at midnight
+  scheduleDailyLoginReport();
 
   return httpServer;
 }
@@ -182,10 +277,39 @@ export async function registerRoutes(
 async function seedDatabase() {
   const existing = await storage.getProfiles();
   if (existing.length === 0) {
-    // We can't easily seed profiles without users because of the foreign key constraint.
-    // However, if we wanted to seed, we'd need to mock users first.
-    // Since Replit Auth users are dynamic, we'll skip seeding profiles for now
-    // or we could potentially create a dummy user in the users table if we really wanted to.
     console.log("Database is empty. Create a profile after logging in to see data.");
+  }
+}
+
+// Schedule daily login report at midnight
+function scheduleDailyLoginReport() {
+  const now = new Date();
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0); // Next midnight
+  
+  const msUntilMidnight = midnight.getTime() - now.getTime();
+  
+  // Schedule first run at midnight
+  setTimeout(async () => {
+    await sendLoginReport();
+    // Then run every 24 hours
+    setInterval(sendLoginReport, 24 * 60 * 60 * 1000);
+  }, msUntilMidnight);
+  
+  console.log(`Daily login report scheduled. First report will be sent at midnight (in ${Math.round(msUntilMidnight / 1000 / 60)} minutes).`);
+}
+
+async function sendLoginReport() {
+  try {
+    // Get yesterday's logins (since this runs at midnight, we want the previous day)
+    const logins = await storage.getYesterdaysLogins();
+    await sendDailyLoginReport(logins.map(l => ({
+      userId: l.userId,
+      username: l.username || 'Unknown',
+      loginTime: l.loginTime || new Date(),
+    })));
+    console.log(`Daily login report sent with ${logins.length} logins from yesterday.`);
+  } catch (error) {
+    console.error("Failed to send daily login report:", error);
   }
 }

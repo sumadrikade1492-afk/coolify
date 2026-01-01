@@ -7,6 +7,7 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { authStorage } from "./storage";
+import { storage } from "../../storage";
 
 const getOidcConfig = memoize(
   async () => {
@@ -58,6 +59,16 @@ async function upsertUser(claims: any) {
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
   });
+  
+  // Log the login for daily report
+  try {
+    const username = claims["first_name"] 
+      ? `${claims["first_name"]} ${claims["last_name"] || ''}`.trim()
+      : claims["email"] || claims["sub"];
+    await storage.logUserLogin(claims["sub"], username, claims["email"]);
+  } catch (error) {
+    console.error("Failed to log user login:", error);
+  }
 }
 
 export async function setupAuth(app: Express) {

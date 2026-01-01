@@ -15,21 +15,21 @@ export const profiles = pgTable("profiles", {
   gender: text("gender").notNull(), // 'Male' | 'Female'
   country: text("country").notNull(), // Current country
   city: text("city").notNull(), // Current city
-  nativePlace: text("native_place"), // Native place in India
-  nativeLanguage: text("native_language"), // Native language
+  nativePlace: text("native_place").notNull(), // Native place in India
+  nativeLanguage: text("native_language").notNull(), // Native language
   denomination: text("denomination").notNull(),
-  otherDenomination: text("other_denomination"), // Free-form field when denomination is "Other"
-  occupation: text("occupation"),
-  visaType: text("visa_type"), // H1B, Green Card, Citizen, OPT, etc.
-  height: text("height"), // Height in feet/inches format e.g. "5'8"
-  yearsInUS: integer("years_in_us"), // Number of years living in the US
-  aboutMe: text("about_me"),
-  partnerPreferences: text("partner_preferences"),
-  photoUrl: text("photo_url"),
-  phoneNumber: text("phone_number"),
+  otherDenomination: text("other_denomination"), // Free-form field when denomination is "Other" (optional)
+  occupation: text("occupation").notNull(),
+  visaType: text("visa_type").notNull(), // H1B, Green Card, Citizen, OPT, etc.
+  height: text("height").notNull(), // Height in feet/inches format e.g. "5'8"
+  yearsInUS: integer("years_in_us").notNull(), // Number of years living in the US
+  aboutMe: text("about_me").notNull(),
+  partnerPreferences: text("partner_preferences").notNull(),
+  photoUrl: text("photo_url"), // Optional - photo upload
+  phoneNumber: text("phone_number").notNull(),
   phoneVerified: boolean("phone_verified").default(false),
   createdBy: text("created_by").notNull(), // 'Self', 'Parent', etc.
-  createdByName: text("created_by_name"), // Name of person who created profile if not self
+  createdByName: text("created_by_name"), // Name of person who created profile if not self (optional when Self)
   createdAt: timestamp("created_at").defaultNow(),
 });
 

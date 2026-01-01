@@ -18,11 +18,47 @@ import { Loader2, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 
-// Extend schema with strict types for form
+// Extend schema with strict validation for all mandatory fields
 const currentYear = new Date().getFullYear();
 const formSchema = insertProfileSchema.extend({
-  birthMonth: z.coerce.number().min(1).max(12),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  gender: z.string().min(1, "Gender is required"),
+  birthMonth: z.coerce.number().min(1, "Birth month is required").max(12),
   birthYear: z.coerce.number().min(1940).max(currentYear - 18, "Must be at least 18 years old"),
+  country: z.string().min(1, "Country is required"),
+  city: z.string().min(1, "City is required"),
+  nativePlace: z.string().min(1, "Native place is required"),
+  nativeLanguage: z.string().min(1, "Native language is required"),
+  denomination: z.string().min(1, "Denomination is required"),
+  otherDenomination: z.string().optional(),
+  occupation: z.string().min(1, "Occupation is required"),
+  visaType: z.string().min(1, "Visa type is required"),
+  height: z.string().min(1, "Height is required"),
+  yearsInUS: z.coerce.number().min(0, "Years in US is required"),
+  aboutMe: z.string().min(10, "Please write at least 10 characters about yourself"),
+  partnerPreferences: z.string().min(10, "Please write at least 10 characters about partner preferences"),
+  phoneNumber: z.string().min(10, "Valid phone number is required"),
+  createdBy: z.string().min(1, "Please specify who is creating this profile"),
+  createdByName: z.string().optional(),
+}).refine((data) => {
+  // Require otherDenomination when denomination is "Other"
+  if (data.denomination === "Other" && (!data.otherDenomination || data.otherDenomination.trim() === "")) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Please specify your church/denomination name",
+  path: ["otherDenomination"],
+}).refine((data) => {
+  // Require createdByName when createdBy is not "Self"
+  if (data.createdBy !== "Self" && (!data.createdByName || data.createdByName.trim() === "")) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Please provide the name of the person creating this profile",
+  path: ["createdByName"],
 });
 
 export default function CreateProfile() {

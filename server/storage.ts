@@ -6,7 +6,8 @@ import {
   type InsertProfile,
   type PhoneVerification,
 } from "@shared/schema";
-import { eq, and, gte, lte, ilike, gt } from "drizzle-orm";
+import { users, loginLogs, type User, type LoginLog } from "@shared/models/auth";
+import { eq, and, gte, lte, ilike, gt, sql } from "drizzle-orm";
 
 export interface IStorage {
   getProfiles(filters?: {
@@ -18,6 +19,7 @@ export interface IStorage {
   }): Promise<Profile[]>;
   getProfile(id: number): Promise<Profile | undefined>;
   getProfileByUserId(userId: string): Promise<Profile | undefined>;
+  getProfilesByUserId(userId: string): Promise<Profile[]>;
   createProfile(userId: string, profile: InsertProfile, phoneVerified?: boolean): Promise<Profile>;
   updateProfile(id: number, updates: Partial<InsertProfile>): Promise<Profile>;
   deleteProfile(id: number): Promise<void>;
@@ -26,6 +28,14 @@ export interface IStorage {
   isPhoneVerifiedForUser(userId: string, phoneNumber: string): Promise<boolean>;
   consumePhoneVerification(userId: string, phoneNumber: string): Promise<void>;
   markPhoneVerified(profileId: number): Promise<Profile>;
+  // User management
+  getUser(userId: string): Promise<User | undefined>;
+  isUserAdmin(userId: string): Promise<boolean>;
+  setUserAdmin(userId: string, isAdmin: boolean): Promise<void>;
+  // Login tracking
+  logUserLogin(userId: string, username?: string, email?: string): Promise<void>;
+  getTodaysLogins(): Promise<LoginLog[]>;
+  getYesterdaysLogins(): Promise<LoginLog[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -170,6 +180,55 @@ export class DatabaseStorage implements IStorage {
       .where(eq(profiles.id, profileId))
       .returning();
     return updated;
+  }
+
+  async getProfilesByUserId(userId: string): Promise<Profile[]> {
+    return await db.select().from(profiles).where(eq(profiles.userId, userId));
+  }
+
+  async getUser(userId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    return user;
+  }
+
+  async isUserAdmin(userId: string): Promise<boolean> {
+    const user = await this.getUser(userId);
+    return user?.isAdmin ?? false;
+  }
+
+  async setUserAdmin(userId: string, isAdmin: boolean): Promise<void> {
+    await db.update(users).set({ isAdmin }).where(eq(users.id, userId));
+  }
+
+  async logUserLogin(userId: string, username?: string, email?: string): Promise<void> {
+    await db.insert(loginLogs).values({
+      userId,
+      username,
+      email,
+      loginTime: new Date(),
+    });
+  }
+
+  async getTodaysLogins(): Promise<LoginLog[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return await db.select().from(loginLogs).where(gte(loginLogs.loginTime, today));
+  }
+
+  async getYesterdaysLogins(): Promise<LoginLog[]> {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(0, 0, 0, 0);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return await db.select().from(loginLogs).where(
+      and(
+        gte(loginLogs.loginTime, yesterday),
+        lte(loginLogs.loginTime, today)
+      )
+    );
   }
 }
 
