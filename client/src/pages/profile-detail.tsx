@@ -124,14 +124,27 @@ export default function ProfileDetail() {
             <div>
               <div className="flex items-center gap-4 mb-2">
                 <h1 className="text-4xl font-serif font-bold text-foreground">
-                  {profile.firstName} {profile.lastName}
+                  Profile #{profile.id}
                 </h1>
                 {profile.phoneVerified && (
                   <Badge className="bg-green-600 hover:bg-green-700">Verified</Badge>
                 )}
               </div>
-              <p className="text-xl text-muted-foreground mb-6 flex items-center gap-2">
-                <MapPin className="w-5 h-5" /> {profile.city}, {profile.country}
+              <p className="text-xl text-muted-foreground mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span className="flex items-center gap-2">
+                  <User className="w-5 h-5" /> 
+                  {profile.gender}, {(() => {
+                    const today = new Date();
+                    const currentYear = today.getFullYear();
+                    const currentMonth = today.getMonth() + 1;
+                    let age = currentYear - profile.birthYear;
+                    if (currentMonth < profile.birthMonth) age--;
+                    return age;
+                  })()} years
+                </span>
+                <span className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" /> {profile.city}, {profile.country}
+                </span>
               </p>
             </div>
 
@@ -213,7 +226,7 @@ export default function ProfileDetail() {
             </div>
 
             <Card className="p-6">
-              <h3 className="font-serif font-bold text-xl mb-4 text-primary">About {profile.firstName}</h3>
+              <h3 className="font-serif font-bold text-xl mb-4 text-primary">About Me</h3>
               <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
                 {profile.aboutMe || "No description provided."}
               </p>
