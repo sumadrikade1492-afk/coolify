@@ -19,7 +19,7 @@ function calculateAge(birthMonth: number, birthYear: number): number {
 
 export function ProfileCard({ profile }: { profile: Profile }) {
   // Use a nice placeholder if no photo
-  const photoUrl = profile.photoUrl || `https://ui-avatars.com/api/?name=${profile.firstName}+${profile.lastName}&background=fde68a&color=92400e&size=200`;
+  const photoUrl = profile.photoUrl || `https://ui-avatars.com/api/?name=${profile.id}&background=fde68a&color=92400e&size=200`;
   const age = calculateAge(profile.birthMonth, profile.birthYear);
 
   return (
@@ -44,7 +44,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
           </div>
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12">
             <h3 className="text-white font-serif text-xl font-bold truncate">
-              {profile.firstName} {profile.lastName}
+              Profile #{profile.id}
             </h3>
             <p className="text-white/90 text-sm truncate">{profile.occupation || "Not specified"}</p>
           </div>
