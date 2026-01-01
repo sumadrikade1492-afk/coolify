@@ -11,10 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Heart, ArrowLeft } from "lucide-react";
+import { Heart, ArrowLeft, Phone, CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
+import { Badge } from "@/components/ui/badge";
 
 const profileSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -27,16 +28,172 @@ const profileSchema = z.object({
   aboutMe: z.string().optional(),
   partnerPreferences: z.string().optional(),
   photoUrl: z.string().optional(),
+  phoneNumber: z.string().optional(),
   createdBy: z.enum(["Self", "Parent", "Sibling", "Friend", "Other"], { required_error: "Please select who is creating this profile" }),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
+
+function PhoneVerificationSection({ 
+  phoneNumber, 
+  onPhoneChange, 
+  isVerified, 
+  onVerified 
+}: { 
+  phoneNumber: string;
+  onPhoneChange: (value: string) => void;
+  isVerified: boolean;
+  onVerified: () => void;
+}) {
+  const { toast } = useToast();
+  const [verificationCode, setVerificationCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+
+  const sendCodeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/phone/send-code", { phoneNumber });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setCodeSent(true);
+      toast({
+        title: "Code sent!",
+        description: "Check your phone for the verification code.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to send code",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const verifyCodeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/phone/verify-code", { 
+        phoneNumber, 
+        code: verificationCode 
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      onVerified();
+      toast({
+        title: "Phone verified!",
+        description: "Your phone number has been verified successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Verification failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (isVerified) {
+    return (
+      <div className="space-y-2">
+        <FormLabel>Phone Number</FormLabel>
+        <div className="flex items-center gap-2">
+          <Input 
+            value={phoneNumber} 
+            disabled 
+            data-testid="input-phone-verified"
+          />
+          <Badge variant="default" className="bg-green-600">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Verified
+          </Badge>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 p-4 border rounded-md bg-muted/30">
+      <div className="flex items-center gap-2">
+        <Phone className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium">Phone Verification (Optional)</span>
+      </div>
+      
+      <div className="flex gap-2">
+        <Input
+          placeholder="+1234567890"
+          value={phoneNumber}
+          onChange={(e) => onPhoneChange(e.target.value)}
+          disabled={codeSent}
+          data-testid="input-phone-number"
+        />
+        {!codeSent && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => sendCodeMutation.mutate()}
+            disabled={sendCodeMutation.isPending || phoneNumber.length < 10}
+            data-testid="button-send-code"
+          >
+            {sendCodeMutation.isPending ? "Sending..." : "Send Code"}
+          </Button>
+        )}
+      </div>
+
+      {codeSent && (
+        <div className="flex gap-2">
+          <Input
+            placeholder="Enter 6-digit code"
+            value={verificationCode}
+            onChange={(e) => setVerificationCode(e.target.value)}
+            maxLength={6}
+            data-testid="input-verification-code"
+          />
+          <Button
+            type="button"
+            onClick={() => verifyCodeMutation.mutate()}
+            disabled={verifyCodeMutation.isPending || verificationCode.length !== 6}
+            data-testid="button-verify-code"
+          >
+            {verifyCodeMutation.isPending ? "Verifying..." : "Verify"}
+          </Button>
+        </div>
+      )}
+
+      {codeSent && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setCodeSent(false);
+            setVerificationCode("");
+          }}
+          data-testid="button-change-phone"
+        >
+          Change phone number
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function CreateProfile() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneVerified, setPhoneVerified] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -64,6 +221,7 @@ export default function CreateProfile() {
       aboutMe: "",
       partnerPreferences: "",
       photoUrl: "",
+      phoneNumber: "",
       createdBy: undefined,
     },
   });
@@ -91,7 +249,11 @@ export default function CreateProfile() {
   });
 
   const onSubmit = (data: ProfileFormData) => {
-    createMutation.mutate(data);
+    const submitData = {
+      ...data,
+      phoneNumber: phoneVerified ? phoneNumber : undefined,
+    };
+    createMutation.mutate(submitData);
   };
 
   if (isLoading) {
@@ -284,6 +446,13 @@ export default function CreateProfile() {
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+
+                <PhoneVerificationSection
+                  phoneNumber={phoneNumber}
+                  onPhoneChange={setPhoneNumber}
+                  isVerified={phoneVerified}
+                  onVerified={() => setPhoneVerified(true)}
                 />
 
                 <FormField

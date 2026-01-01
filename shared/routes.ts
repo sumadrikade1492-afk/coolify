@@ -74,6 +74,35 @@ export const api = {
   },
 };
 
+export const phoneVerificationApi = {
+  sendCode: {
+    method: 'POST' as const,
+    path: '/api/phone/send-code',
+    input: z.object({
+      phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
+    }),
+    responses: {
+      200: z.object({ success: z.boolean(), message: z.string() }),
+      400: errorSchemas.validation,
+      500: errorSchemas.internal,
+    },
+  },
+  verifyCode: {
+    method: 'POST' as const,
+    path: '/api/phone/verify-code',
+    input: z.object({
+      phoneNumber: z.string(),
+      code: z.string().length(6, "Code must be 6 digits"),
+      profileId: z.number().optional(),
+    }),
+    responses: {
+      200: z.object({ success: z.boolean(), message: z.string() }),
+      400: errorSchemas.validation,
+      500: errorSchemas.internal,
+    },
+  },
+};
+
 export function buildUrl(path: string, params?: Record<string, string | number>): string {
   let url = path;
   if (params) {

@@ -2,8 +2,9 @@ import type { Express } from "express";
 import type { Server } from "http";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import { storage } from "./storage";
-import { api } from "@shared/routes";
+import { api, phoneVerificationApi } from "@shared/routes";
 import { z } from "zod";
+import { generateVerificationCode, sendVerificationSMS, isTwilioConfigured } from "./twilio";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -107,6 +108,60 @@ export async function registerRoutes(
       await storage.deleteProfile(profileId);
       res.status(204).send();
     } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Phone Verification Routes
+  app.post(phoneVerificationApi.sendCode.path, async (req, res) => {
+    try {
+      if (!isTwilioConfigured()) {
+        return res.status(500).json({ message: "Phone verification is not configured" });
+      }
+
+      const input = phoneVerificationApi.sendCode.input.parse(req.body);
+      const code = generateVerificationCode();
+      
+      await storage.createPhoneVerification(input.phoneNumber, code);
+      const sent = await sendVerificationSMS(input.phoneNumber, code);
+
+      if (!sent) {
+        return res.status(500).json({ message: "Failed to send verification code" });
+      }
+
+      res.json({ success: true, message: "Verification code sent" });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post(phoneVerificationApi.verifyCode.path, async (req, res) => {
+    try {
+      const input = phoneVerificationApi.verifyCode.input.parse(req.body);
+      const verified = await storage.verifyPhoneCode(input.phoneNumber, input.code);
+
+      if (!verified) {
+        return res.status(400).json({ message: "Invalid or expired verification code" });
+      }
+
+      if (input.profileId) {
+        await storage.markPhoneVerified(input.profileId);
+      }
+
+      res.json({ success: true, message: "Phone number verified successfully" });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
       res.status(500).json({ message: "Internal server error" });
     }
   });

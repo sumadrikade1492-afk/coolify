@@ -18,15 +18,36 @@ export const profiles = pgTable("profiles", {
   aboutMe: text("about_me"),
   partnerPreferences: text("partner_preferences"),
   photoUrl: text("photo_url"),
+  phoneNumber: text("phone_number"),
+  phoneVerified: boolean("phone_verified").default(false),
   createdBy: text("created_by").notNull(), // 'Self', 'Parent', etc.
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const phoneVerifications = pgTable("phone_verifications", {
+  id: serial("id").primaryKey(),
+  phoneNumber: text("phone_number").notNull(),
+  code: text("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  verified: boolean("verified").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertProfileSchema = createInsertSchema(profiles).omit({
   id: true,
   createdAt: true,
-  userId: true
+  userId: true,
+  phoneVerified: true,
 });
 
 export type Profile = typeof profiles.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
+
+export const insertPhoneVerificationSchema = createInsertSchema(phoneVerifications).omit({
+  id: true,
+  createdAt: true,
+  verified: true,
+});
+
+export type PhoneVerification = typeof phoneVerifications.$inferSelect;
+export type InsertPhoneVerification = z.infer<typeof insertPhoneVerificationSchema>;

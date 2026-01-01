@@ -68,3 +68,18 @@ Routes are defined in `shared/routes.ts` with Zod schemas for input validation. 
 ### Development Tools
 - Vite dev server with HMR
 - Replit-specific plugins for development (cartographer, dev-banner, error overlay)
+
+### Phone Verification
+- Twilio SMS integration for phone verification
+- Requires `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` environment variables
+- Verification codes expire after 10 minutes
+
+### Session Configuration
+- Sessions are configured to last 30 days (1 month) for user convenience
+
+### Pending Features
+- **Email Integration**: SendGrid was not configured (user did not provide credentials). To add email functionality:
+  1. Get a SendGrid API key
+  2. Add `SENDGRID_API_KEY` as an environment secret
+  3. Implement email service in `server/sendgrid.ts`
+  4. Add welcome email on registration

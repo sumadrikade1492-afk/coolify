@@ -1,10 +1,12 @@
 import { db } from "./db";
 import {
   profiles,
+  phoneVerifications,
   type Profile,
   type InsertProfile,
+  type PhoneVerification,
 } from "@shared/schema";
-import { eq, and, gte, lte, ilike } from "drizzle-orm";
+import { eq, and, gte, lte, ilike, gt } from "drizzle-orm";
 
 export interface IStorage {
   getProfiles(filters?: {
@@ -83,6 +85,50 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProfile(id: number): Promise<void> {
     await db.delete(profiles).where(eq(profiles.id, id));
+  }
+
+  async createPhoneVerification(phoneNumber: string, code: string): Promise<PhoneVerification> {
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    await db.delete(phoneVerifications).where(eq(phoneVerifications.phoneNumber, phoneNumber));
+    const [verification] = await db
+      .insert(phoneVerifications)
+      .values({ phoneNumber, code, expiresAt })
+      .returning();
+    return verification;
+  }
+
+  async verifyPhoneCode(phoneNumber: string, code: string): Promise<boolean> {
+    const [verification] = await db
+      .select()
+      .from(phoneVerifications)
+      .where(
+        and(
+          eq(phoneVerifications.phoneNumber, phoneNumber),
+          eq(phoneVerifications.code, code),
+          gt(phoneVerifications.expiresAt, new Date()),
+          eq(phoneVerifications.verified, false)
+        )
+      );
+
+    if (!verification) {
+      return false;
+    }
+
+    await db
+      .update(phoneVerifications)
+      .set({ verified: true })
+      .where(eq(phoneVerifications.id, verification.id));
+
+    return true;
+  }
+
+  async markPhoneVerified(profileId: number): Promise<Profile> {
+    const [updated] = await db
+      .update(profiles)
+      .set({ phoneVerified: true })
+      .where(eq(profiles.id, profileId))
+      .returning();
+    return updated;
   }
 }
 
