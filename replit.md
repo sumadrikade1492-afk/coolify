@@ -1,4 +1,4 @@
-# NRI Christian Matrimony
+# NRIChristianMatrimony
 
 ## Overview
 

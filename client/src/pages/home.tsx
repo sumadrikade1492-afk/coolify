@@ -21,7 +21,7 @@ export default function Home() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2">
             <Heart className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold">NRI Christian Matrimony</h1>
+            <h1 className="text-xl font-bold">NRIChristianMatrimony</h1>
           </div>
           <nav className="flex items-center gap-2 flex-wrap">
             <Link href="/profiles">
@@ -139,7 +139,7 @@ export default function Home() {
 
       <footer className="border-t bg-card mt-12">
         <div className="container mx-auto px-4 py-6 text-center text-muted-foreground">
-          <p>NRI Christian Matrimony - Free Matchmaking for the Christian Community</p>
+          <p>NRIChristianMatrimony - Free Matchmaking for the Christian Community</p>
         </div>
       </footer>
     </div>
