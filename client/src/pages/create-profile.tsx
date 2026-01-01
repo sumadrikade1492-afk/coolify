@@ -49,6 +49,7 @@ export default function CreateProfile() {
       partnerPreferences: "",
       photoUrl: "",
       createdBy: "Self",
+      createdByName: "",
       phoneNumber: "",
     }
   });
@@ -336,7 +337,7 @@ export default function CreateProfile() {
                         <FormLabel>Profile Created By</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger data-testid="select-created-by">
                               <SelectValue placeholder="Select..." />
                             </SelectTrigger>
                           </FormControl>
@@ -352,6 +353,26 @@ export default function CreateProfile() {
                       </FormItem>
                     )}
                   />
+                  {form.watch("createdBy") !== "Self" && form.watch("createdBy") && (
+                    <FormField
+                      control={form.control}
+                      name="createdByName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Your Name</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Enter your name" 
+                              value={field.value || ""} 
+                              onChange={field.onChange}
+                              data-testid="input-created-by-name"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
               </div>
 

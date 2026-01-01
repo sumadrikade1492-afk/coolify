@@ -26,6 +26,7 @@ export const profiles = pgTable("profiles", {
   phoneNumber: text("phone_number"),
   phoneVerified: boolean("phone_verified").default(false),
   createdBy: text("created_by").notNull(), // 'Self', 'Parent', etc.
+  createdByName: text("created_by_name"), // Name of person who created profile if not self
   createdAt: timestamp("created_at").defaultNow(),
 });
 

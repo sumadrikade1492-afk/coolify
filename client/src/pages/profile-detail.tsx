@@ -103,7 +103,13 @@ export default function ProfileDetail() {
                 </div>
                 <div className="flex justify-between border-b pb-2 border-primary/10">
                   <span className="text-muted-foreground">Posted By</span>
-                  <span className="font-medium">{profile.createdBy}</span>
+                  <span className="font-medium">
+                    {profile.createdBy === "Self" 
+                      ? "Self" 
+                      : profile.createdByName 
+                        ? `${profile.createdByName} (${profile.createdBy})`
+                        : profile.createdBy}
+                  </span>
                 </div>
                 <div className="flex justify-between border-b pb-2 border-primary/10">
                   <span className="text-muted-foreground">Active</span>
