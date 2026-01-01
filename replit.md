@@ -7,6 +7,7 @@ A Christian matrimony platform designed for NRI (Non-Resident Indian) communitie
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Database approach: Do NOT add schema-level validations (like NOT NULL constraints) to the database. Keep all validations at the application level (frontend forms and API routes).
 
 ## System Architecture
 
