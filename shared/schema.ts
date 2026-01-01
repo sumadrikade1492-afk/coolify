@@ -22,6 +22,7 @@ export const profiles = pgTable("profiles", {
   occupation: text("occupation"),
   visaType: text("visa_type"), // H1B, Green Card, Citizen, OPT, etc.
   height: text("height"), // Height in feet/inches format e.g. "5'8"
+  yearsInUS: integer("years_in_us"), // Number of years living in the US
   aboutMe: text("about_me"),
   partnerPreferences: text("partner_preferences"),
   photoUrl: text("photo_url"),

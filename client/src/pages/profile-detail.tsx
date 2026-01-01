@@ -168,6 +168,22 @@ export default function ProfileDetail() {
                      <span className="text-muted-foreground">Visa Type</span>
                      <span className="font-medium">{profile.visaType || "N/A"}</span>
                    </div>
+                   <div className="grid grid-cols-2 gap-2">
+                     <span className="text-muted-foreground">Years in USA</span>
+                     <span className="font-medium">
+                       {profile.yearsInUS !== null && profile.yearsInUS !== undefined
+                         ? profile.yearsInUS === 0 
+                           ? "Less than 1 year"
+                           : profile.yearsInUS >= 20
+                             ? "20+ years"
+                             : profile.yearsInUS >= 15
+                               ? "15-20 years"
+                               : profile.yearsInUS > 10
+                                 ? "10-15 years"
+                                 : `${profile.yearsInUS} years`
+                         : "N/A"}
+                     </span>
+                   </div>
                  </div>
                </Card>
 

@@ -48,6 +48,7 @@ export default function CreateProfile() {
       occupation: "",
       visaType: "",
       height: "",
+      yearsInUS: undefined,
       aboutMe: "",
       partnerPreferences: "",
       photoUrl: "",
@@ -452,6 +453,39 @@ export default function CreateProfile() {
                             <SelectItem value="6'4&quot;">6'4" (193 cm)</SelectItem>
                             <SelectItem value="6'5&quot;">6'5" (196 cm)</SelectItem>
                             <SelectItem value="6'6&quot;">6'6" (198 cm)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="yearsInUS"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Years in USA</FormLabel>
+                        <Select onValueChange={(val) => field.onChange(parseInt(val))} defaultValue={field.value?.toString() || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-years-in-us">
+                              <SelectValue placeholder="Select years" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="0">Less than 1 year</SelectItem>
+                            <SelectItem value="1">1 year</SelectItem>
+                            <SelectItem value="2">2 years</SelectItem>
+                            <SelectItem value="3">3 years</SelectItem>
+                            <SelectItem value="4">4 years</SelectItem>
+                            <SelectItem value="5">5 years</SelectItem>
+                            <SelectItem value="6">6 years</SelectItem>
+                            <SelectItem value="7">7 years</SelectItem>
+                            <SelectItem value="8">8 years</SelectItem>
+                            <SelectItem value="9">9 years</SelectItem>
+                            <SelectItem value="10">10 years</SelectItem>
+                            <SelectItem value="15">10-15 years</SelectItem>
+                            <SelectItem value="20">15-20 years</SelectItem>
+                            <SelectItem value="25">20+ years</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
