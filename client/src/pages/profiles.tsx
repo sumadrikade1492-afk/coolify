@@ -12,7 +12,7 @@ export default function Profiles() {
   const [filters, setFilters] = useState({
     gender: "",
     denomination: "",
-    location: "",
+    country: "",
     minAge: "",
     maxAge: "",
   });
@@ -28,7 +28,7 @@ export default function Profiles() {
     setFilters({
       gender: "",
       denomination: "",
-      location: "",
+      country: "",
       minAge: "",
       maxAge: "",
     });
@@ -86,12 +86,27 @@ export default function Profiles() {
             </div>
 
             <div className="space-y-2">
-              <Label>Location</Label>
-              <Input 
-                placeholder="City or Country" 
-                value={filters.location}
-                onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
-              />
+              <Label>Country</Label>
+              <Select 
+                value={filters.country} 
+                onValueChange={(val) => setFilters(prev => ({ ...prev, country: val }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Any Country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USA">United States</SelectItem>
+                  <SelectItem value="Canada">Canada</SelectItem>
+                  <SelectItem value="UK">United Kingdom</SelectItem>
+                  <SelectItem value="Australia">Australia</SelectItem>
+                  <SelectItem value="Germany">Germany</SelectItem>
+                  <SelectItem value="Singapore">Singapore</SelectItem>
+                  <SelectItem value="UAE">United Arab Emirates</SelectItem>
+                  <SelectItem value="New Zealand">New Zealand</SelectItem>
+                  <SelectItem value="Ireland">Ireland</SelectItem>
+                  <SelectItem value="India">India</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">

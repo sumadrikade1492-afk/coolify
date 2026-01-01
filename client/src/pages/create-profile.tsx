@@ -38,7 +38,8 @@ export default function CreateProfile() {
       gender: "",
       birthMonth: undefined,
       birthYear: undefined,
-      location: "",
+      country: "",
+      city: "",
       nativePlace: "",
       nativeLanguage: "",
       denomination: "",
@@ -182,14 +183,76 @@ export default function CreateProfile() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
-                    name="location"
+                    name="country"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Current Location (City, Country)</FormLabel>
-                        <FormControl><Input placeholder="New York, USA" {...field} data-testid="input-location" /></FormControl>
+                        <FormLabel>Country</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-country">
+                              <SelectValue placeholder="Select country" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="USA">United States</SelectItem>
+                            <SelectItem value="Canada">Canada</SelectItem>
+                            <SelectItem value="UK">United Kingdom</SelectItem>
+                            <SelectItem value="Australia">Australia</SelectItem>
+                            <SelectItem value="Germany">Germany</SelectItem>
+                            <SelectItem value="Singapore">Singapore</SelectItem>
+                            <SelectItem value="UAE">United Arab Emirates</SelectItem>
+                            <SelectItem value="New Zealand">New Zealand</SelectItem>
+                            <SelectItem value="Ireland">Ireland</SelectItem>
+                            <SelectItem value="Switzerland">Switzerland</SelectItem>
+                            <SelectItem value="Netherlands">Netherlands</SelectItem>
+                            <SelectItem value="India">India</SelectItem>
+                            <SelectItem value="Other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => {
+                      const country = form.watch("country");
+                      const cityOptions: Record<string, string[]> = {
+                        "USA": ["New York", "Los Angeles", "Chicago", "Houston", "Dallas", "San Francisco", "Seattle", "Boston", "Atlanta", "Miami", "Denver", "Phoenix", "San Jose", "Austin", "San Diego", "Other"],
+                        "Canada": ["Toronto", "Vancouver", "Montreal", "Calgary", "Ottawa", "Edmonton", "Winnipeg", "Other"],
+                        "UK": ["London", "Manchester", "Birmingham", "Leeds", "Glasgow", "Edinburgh", "Bristol", "Liverpool", "Other"],
+                        "Australia": ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Canberra", "Other"],
+                        "Germany": ["Berlin", "Munich", "Frankfurt", "Hamburg", "Cologne", "Stuttgart", "Other"],
+                        "Singapore": ["Singapore"],
+                        "UAE": ["Dubai", "Abu Dhabi", "Sharjah", "Other"],
+                        "New Zealand": ["Auckland", "Wellington", "Christchurch", "Other"],
+                        "Ireland": ["Dublin", "Cork", "Galway", "Limerick", "Other"],
+                        "Switzerland": ["Zurich", "Geneva", "Basel", "Bern", "Other"],
+                        "Netherlands": ["Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Other"],
+                        "India": ["Mumbai", "Delhi", "Bangalore", "Chennai", "Hyderabad", "Pune", "Kolkata", "Kochi", "Other"],
+                        "Other": ["Other"]
+                      };
+                      const cities = country ? (cityOptions[country] || ["Other"]) : [];
+                      return (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!country}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-city">
+                                <SelectValue placeholder={country ? "Select city" : "Select country first"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {cities.map(city => (
+                                <SelectItem key={city} value={city}>{city}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
                   <FormField
                     control={form.control}

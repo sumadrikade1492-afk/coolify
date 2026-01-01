@@ -131,7 +131,7 @@ export default function ProfileDetail() {
                 )}
               </div>
               <p className="text-xl text-muted-foreground mb-6 flex items-center gap-2">
-                <MapPin className="w-5 h-5" /> {profile.location}
+                <MapPin className="w-5 h-5" /> {profile.city}, {profile.country}
               </p>
             </div>
 

@@ -23,7 +23,7 @@ export async function registerRoutes(
       const filters = {
         gender: req.query.gender as string,
         denomination: req.query.denomination as string,
-        location: req.query.location as string,
+        country: req.query.country as string,
         minAge: req.query.minAge ? Number(req.query.minAge) : undefined,
         maxAge: req.query.maxAge ? Number(req.query.maxAge) : undefined,
       };

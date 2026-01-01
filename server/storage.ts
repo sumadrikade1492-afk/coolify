@@ -14,7 +14,7 @@ export interface IStorage {
     denomination?: string;
     minAge?: number;
     maxAge?: number;
-    location?: string;
+    country?: string;
   }): Promise<Profile[]>;
   getProfile(id: number): Promise<Profile | undefined>;
   getProfileByUserId(userId: string): Promise<Profile | undefined>;
@@ -34,7 +34,7 @@ export class DatabaseStorage implements IStorage {
     denomination?: string;
     minAge?: number;
     maxAge?: number;
-    location?: string;
+    country?: string;
   }): Promise<Profile[]> {
     const conditions = [];
 
@@ -44,14 +44,18 @@ export class DatabaseStorage implements IStorage {
     if (filters?.denomination) {
       conditions.push(ilike(profiles.denomination, `%${filters.denomination}%`));
     }
-    if (filters?.location) {
-      conditions.push(ilike(profiles.location, `%${filters.location}%`));
+    if (filters?.country) {
+      conditions.push(eq(profiles.country, filters.country));
     }
     if (filters?.minAge) {
-      conditions.push(gte(profiles.age, filters.minAge));
+      const currentYear = new Date().getFullYear();
+      const maxBirthYear = currentYear - filters.minAge;
+      conditions.push(lte(profiles.birthYear, maxBirthYear));
     }
     if (filters?.maxAge) {
-      conditions.push(lte(profiles.age, filters.maxAge));
+      const currentYear = new Date().getFullYear();
+      const minBirthYear = currentYear - filters.maxAge;
+      conditions.push(gte(profiles.birthYear, minBirthYear));
     }
 
     if (conditions.length === 0) {

@@ -57,7 +57,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="w-4 h-4 text-primary" />
-            <span className="truncate">{profile.location}</span>
+            <span className="truncate">{profile.city}, {profile.country}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Briefcase className="w-4 h-4 text-primary" />

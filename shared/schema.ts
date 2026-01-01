@@ -13,7 +13,8 @@ export const profiles = pgTable("profiles", {
   birthMonth: integer("birth_month").notNull(), // 1-12
   birthYear: integer("birth_year").notNull(),
   gender: text("gender").notNull(), // 'Male' | 'Female'
-  location: text("location").notNull(), // Current location
+  country: text("country").notNull(), // Current country
+  city: text("city").notNull(), // Current city
   nativePlace: text("native_place"), // Native place in India
   nativeLanguage: text("native_language"), // Native language
   denomination: text("denomination").notNull(),
