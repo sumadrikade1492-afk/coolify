@@ -16,13 +16,15 @@ export default function Profiles() {
     minAge: "",
     maxAge: "",
   });
+  const [hasSearched, setHasSearched] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState(filters);
 
-  // Debounced/applied filters could be added here for perf, 
-  // but for now we pass directly to hook which handles re-fetching.
-  // We'll use a separate state for "applied" to prevent fetching on every keystroke if needed,
-  // but for simplicity with small data, direct is fine.
-  
-  const { data: profiles, isLoading, error } = useProfiles(filters as any);
+  const { data: profiles, isLoading, error } = useProfiles(hasSearched ? appliedFilters as any : null);
+
+  const handleSearch = () => {
+    setAppliedFilters(filters);
+    setHasSearched(true);
+  };
 
   const resetFilters = () => {
     setFilters({
@@ -32,6 +34,7 @@ export default function Profiles() {
       minAge: "",
       maxAge: "",
     });
+    setHasSearched(false);
   };
 
   return (
@@ -40,7 +43,7 @@ export default function Profiles() {
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-3xl md:text-4xl font-serif font-bold mb-4">Find Your Partner</h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Browse through our verified profiles to find someone who shares your faith and values.
+            Use the filters below and click Search to find someone who shares your faith and values.
           </p>
         </div>
       </div>
@@ -48,14 +51,14 @@ export default function Profiles() {
       <div className="container mx-auto px-4 pb-20">
         {/* Filters */}
         <div className="bg-card border rounded-xl p-6 shadow-sm mb-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 items-end">
             <div className="space-y-2">
               <Label>Looking For</Label>
               <Select 
                 value={filters.gender} 
                 onValueChange={(val) => setFilters(prev => ({ ...prev, gender: val }))}
               >
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-filter-gender">
                   <SelectValue placeholder="Any Gender" />
                 </SelectTrigger>
                 <SelectContent>
@@ -71,7 +74,7 @@ export default function Profiles() {
                 value={filters.denomination} 
                 onValueChange={(val) => setFilters(prev => ({ ...prev, denomination: val }))}
               >
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-filter-denomination">
                   <SelectValue placeholder="Any" />
                 </SelectTrigger>
                 <SelectContent>
@@ -91,7 +94,7 @@ export default function Profiles() {
                 value={filters.country} 
                 onValueChange={(val) => setFilters(prev => ({ ...prev, country: val }))}
               >
-                <SelectTrigger>
+                <SelectTrigger data-testid="select-filter-country">
                   <SelectValue placeholder="Any Country" />
                 </SelectTrigger>
                 <SelectContent>
@@ -116,6 +119,7 @@ export default function Profiles() {
                 placeholder="18" 
                 value={filters.minAge}
                 onChange={(e) => setFilters(prev => ({ ...prev, minAge: e.target.value }))}
+                data-testid="input-filter-min-age"
               />
             </div>
 
@@ -126,13 +130,24 @@ export default function Profiles() {
                 placeholder="60" 
                 value={filters.maxAge}
                 onChange={(e) => setFilters(prev => ({ ...prev, maxAge: e.target.value }))}
+                data-testid="input-filter-max-age"
               />
             </div>
+
+            <Button 
+              onClick={handleSearch}
+              className="w-full"
+              data-testid="button-search"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              Search
+            </Button>
 
             <Button 
               variant="outline" 
               onClick={resetFilters}
               className="w-full text-muted-foreground hover:text-foreground"
+              data-testid="button-reset-filters"
             >
               <FilterX className="w-4 h-4 mr-2" />
               Reset
@@ -141,7 +156,13 @@ export default function Profiles() {
         </div>
 
         {/* Results */}
-        {isLoading ? (
+        {!hasSearched ? (
+          <div className="text-center py-20 bg-muted/30 rounded-2xl">
+            <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">Start Your Search</h3>
+            <p className="text-muted-foreground mb-6">Use the filters above and click Search to find matching profiles.</p>
+          </div>
+        ) : isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
             <p className="text-muted-foreground">Finding matches...</p>

@@ -8,7 +8,7 @@ type CreateProfileInput = z.infer<typeof api.profiles.create.input>;
 type UpdateProfileInput = z.infer<typeof api.profiles.update.input>;
 type ProfileFilters = z.infer<typeof api.profiles.list.input>;
 
-export function useProfiles(filters?: ProfileFilters) {
+export function useProfiles(filters?: ProfileFilters | null) {
   // Construct query string for cache key and fetch
   const queryParams = new URLSearchParams();
   if (filters) {
@@ -28,6 +28,7 @@ export function useProfiles(filters?: ProfileFilters) {
       if (!res.ok) throw new Error("Failed to fetch profiles");
       return api.profiles.list.responses[200].parse(await res.json());
     },
+    enabled: filters !== null,
   });
 }
 
