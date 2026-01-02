@@ -11,8 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { SiGoogle } from "react-icons/si";
-import { Separator } from "@/components/ui/separator";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -99,10 +97,6 @@ export default function LoginPage() {
     },
   });
 
-  const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/20">
       <Card className="w-full max-w-md">
@@ -111,22 +105,6 @@ export default function LoginPage() {
           <CardDescription>Welcome back to NRI Christian Matrimony</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            variant="outline"
-            className="w-full gap-2"
-            onClick={handleGoogleLogin}
-            data-testid="button-google-login"
-          >
-            <SiGoogle className="w-4 h-4" />
-            Continue with Google
-          </Button>
-
-          <div className="flex items-center gap-2">
-            <Separator className="flex-1" />
-            <span className="text-sm text-muted-foreground">or</span>
-            <Separator className="flex-1" />
-          </div>
-
           <div className="flex gap-2">
             <Button
               variant={loginMode === "password" ? "default" : "outline"}

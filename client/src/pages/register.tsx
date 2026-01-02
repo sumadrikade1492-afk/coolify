@@ -11,8 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
-import { SiGoogle } from "react-icons/si";
-import { Separator } from "@/components/ui/separator";
 
 const registerSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -89,10 +87,6 @@ export default function RegisterPage() {
     },
   });
 
-  const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/20">
       <Card className="w-full max-w-md">
@@ -103,22 +97,6 @@ export default function RegisterPage() {
         <CardContent className="space-y-4">
           {!verificationStep ? (
             <>
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={handleGoogleLogin}
-                data-testid="button-google-signup"
-              >
-                <SiGoogle className="w-4 h-4" />
-                Continue with Google
-              </Button>
-
-              <div className="flex items-center gap-2">
-                <Separator className="flex-1" />
-                <span className="text-sm text-muted-foreground">or</span>
-                <Separator className="flex-1" />
-              </div>
-
               <Form {...registerForm}>
                 <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
