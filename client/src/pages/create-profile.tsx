@@ -6,19 +6,19 @@ import { useCreateProfile } from "@/hooks/use-profiles";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card } from "@/components/ui/card";
 import { insertProfileSchema } from "@shared/schema";
 import { useLocation } from "wouter";
-import { useEffect } from "react";
-import { Loader2, HelpCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, HelpCircle, Phone, CheckCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
-// Extend schema with strict validation for all mandatory fields
 const currentYear = new Date().getFullYear();
 const formSchema = insertProfileSchema.extend({
   firstName: z.string().min(1, "First name is required"),
@@ -42,7 +42,6 @@ const formSchema = insertProfileSchema.extend({
   createdBy: z.string().min(1, "Please specify who is creating this profile"),
   createdByName: z.string().optional(),
 }).refine((data) => {
-  // Require otherDenomination when denomination is "Other"
   if (data.denomination === "Other" && (!data.otherDenomination || data.otherDenomination.trim() === "")) {
     return false;
   }
@@ -51,7 +50,6 @@ const formSchema = insertProfileSchema.extend({
   message: "Please specify your church/denomination name",
   path: ["otherDenomination"],
 }).refine((data) => {
-  // Require createdByName when createdBy is not "Self"
   if (data.createdBy !== "Self" && (!data.createdByName || data.createdByName.trim() === "")) {
     return false;
   }
@@ -66,6 +64,10 @@ export default function CreateProfile() {
   const [, setLocation] = useLocation();
   const { mutate, isPending } = useCreateProfile();
   const { toast } = useToast();
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [verifyingPhone, setVerifyingPhone] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [pendingPhoneNumber, setPendingPhoneNumber] = useState("");
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -94,7 +96,36 @@ export default function CreateProfile() {
     }
   });
 
-  // Redirect if not logged in
+  const sendPhoneCodeMutation = useMutation({
+    mutationFn: async (phoneNumber: string) => {
+      const res = await apiRequest("POST", "/api/phone/send-code", { phoneNumber });
+      return res.json();
+    },
+    onSuccess: () => {
+      setPendingPhoneNumber(form.getValues("phoneNumber"));
+      setVerifyingPhone(true);
+      toast({ title: "Code sent", description: "Check your phone for the verification code" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to send code", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const verifyPhoneCodeMutation = useMutation({
+    mutationFn: async ({ phoneNumber, code }: { phoneNumber: string; code: string }) => {
+      const res = await apiRequest("POST", "/api/phone/verify-code", { phoneNumber, code });
+      return res.json();
+    },
+    onSuccess: () => {
+      setPhoneVerified(true);
+      setVerifyingPhone(false);
+      toast({ title: "Phone verified!", description: "Your phone number has been verified" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Verification failed", description: error.message, variant: "destructive" });
+    },
+  });
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({ title: "Login Required", description: "Please login to create a profile", variant: "destructive" });
@@ -105,12 +136,33 @@ export default function CreateProfile() {
   if (authLoading) return <Layout><div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div></Layout>;
 
   function onSubmit(data: z.infer<typeof formSchema>) {
+    if (!phoneVerified) {
+      toast({ title: "Phone verification required", description: "Please verify your phone number before creating a profile", variant: "destructive" });
+      return;
+    }
     mutate(data, {
       onSuccess: () => {
         setLocation("/my-profile");
       }
     });
   }
+
+  const handleSendPhoneCode = () => {
+    const phoneNumber = form.getValues("phoneNumber");
+    if (!phoneNumber || phoneNumber.length < 10) {
+      toast({ title: "Invalid phone number", description: "Please enter a valid phone number", variant: "destructive" });
+      return;
+    }
+    sendPhoneCodeMutation.mutate(phoneNumber);
+  };
+
+  const handleVerifyPhoneCode = () => {
+    if (!verificationCode || verificationCode.length !== 6) {
+      toast({ title: "Invalid code", description: "Please enter the 6-digit verification code", variant: "destructive" });
+      return;
+    }
+    verifyPhoneCodeMutation.mutate({ phoneNumber: pendingPhoneNumber, code: verificationCode });
+  };
 
   return (
     <Layout>
@@ -234,20 +286,6 @@ export default function CreateProfile() {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="USA">United States</SelectItem>
-                            {/* Hidden for US-focused rollout - uncomment when expanding to other countries
-                            <SelectItem value="Canada">Canada</SelectItem>
-                            <SelectItem value="UK">United Kingdom</SelectItem>
-                            <SelectItem value="Australia">Australia</SelectItem>
-                            <SelectItem value="Germany">Germany</SelectItem>
-                            <SelectItem value="Singapore">Singapore</SelectItem>
-                            <SelectItem value="UAE">United Arab Emirates</SelectItem>
-                            <SelectItem value="New Zealand">New Zealand</SelectItem>
-                            <SelectItem value="Ireland">Ireland</SelectItem>
-                            <SelectItem value="Switzerland">Switzerland</SelectItem>
-                            <SelectItem value="Netherlands">Netherlands</SelectItem>
-                            <SelectItem value="India">India</SelectItem>
-                            <SelectItem value="Other">Other</SelectItem>
-                            */}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -619,18 +657,7 @@ export default function CreateProfile() {
                 />
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <FormField
-                    control={form.control}
-                    name="phoneNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number (for verification)</FormLabel>
-                        <FormControl><Input placeholder="+1234567890" value={field.value || ""} onChange={field.onChange} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                   <FormField
+                  <FormField
                     control={form.control}
                     name="photoUrl"
                     render={({ field }) => (
@@ -645,12 +672,110 @@ export default function CreateProfile() {
                 </div>
               </div>
 
+              {/* Phone Verification Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2 text-primary">Phone Verification</h3>
+                <p className="text-sm text-muted-foreground">Phone verification is required to create a profile. VOIP numbers (Google Voice, etc.) are not allowed.</p>
+                
+                {phoneVerified ? (
+                  <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                    <div>
+                      <p className="font-medium text-green-800 dark:text-green-200">Phone Verified</p>
+                      <p className="text-sm text-green-700 dark:text-green-300">{pendingPhoneNumber}</p>
+                    </div>
+                  </div>
+                ) : verifyingPhone ? (
+                  <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-5 h-5 text-primary" />
+                      <p className="text-sm">Enter the 6-digit code sent to <span className="font-medium">{pendingPhoneNumber}</span></p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="123456"
+                        maxLength={6}
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                        className="text-center text-lg tracking-widest max-w-[150px]"
+                        data-testid="input-phone-code"
+                      />
+                      <Button 
+                        type="button" 
+                        onClick={handleVerifyPhoneCode}
+                        disabled={verifyPhoneCodeMutation.isPending}
+                        data-testid="button-verify-phone-code"
+                      >
+                        {verifyPhoneCodeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Verify
+                      </Button>
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => {
+                        setVerifyingPhone(false);
+                        setVerificationCode("");
+                      }}
+                      data-testid="button-change-phone"
+                    >
+                      Change phone number
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <div className="relative flex-1">
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                  placeholder="+1 234 567 8900" 
+                                  className="pl-10"
+                                  value={field.value || ""} 
+                                  onChange={field.onChange}
+                                  data-testid="input-phone-number"
+                                />
+                              </div>
+                            </FormControl>
+                            <Button 
+                              type="button" 
+                              onClick={handleSendPhoneCode}
+                              disabled={sendPhoneCodeMutation.isPending}
+                              data-testid="button-send-code"
+                            >
+                              {sendPhoneCodeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              Send Code
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end pt-4">
-                <Button type="submit" size="lg" className="w-full md:w-auto" disabled={isPending}>
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="w-full md:w-auto" 
+                  disabled={isPending || !phoneVerified}
+                  data-testid="button-create-profile"
+                >
                   {isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Profile...
                     </>
+                  ) : !phoneVerified ? (
+                    "Verify Phone to Continue"
                   ) : (
                     "Create Profile"
                   )}
