@@ -43,7 +43,7 @@ export default function Home() {
               <span className="text-yellow-300">Soulmate</span> in Faith
             </h1>
             <p className="text-lg md:text-xl text-white/90 mb-8 font-light leading-relaxed">
-              Join thousands of Christian families worldwide in finding meaningful, 
+              Join Christian families worldwide in finding meaningful, 
               faith-centered unions. Your perfect match awaits.
             </p>
             
