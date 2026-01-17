@@ -1,8 +1,8 @@
 import twilio from "twilio";
+import { sendEmail } from "./gmail";
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
 let client: twilio.Twilio | null = null;
 
@@ -60,14 +60,20 @@ export async function lookupPhoneNumber(phoneNumber: string): Promise<PhoneLooku
   }
 }
 
+function stripCountryCode(phoneNumber: string): string {
+  let cleaned = phoneNumber.replace(/[\s\-\(\)\.]/g, '');
+  
+  if (cleaned.startsWith('+1')) {
+    cleaned = cleaned.substring(2);
+  } else if (cleaned.startsWith('1') && cleaned.length === 11) {
+    cleaned = cleaned.substring(1);
+  }
+  
+  return cleaned;
+}
+
 export async function sendVerificationSMS(phoneNumber: string, code: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const twilioClient = getClient();
-    
-    if (!twilioPhoneNumber) {
-      throw new Error("Twilio phone number not configured");
-    }
-
     const lookupResult = await lookupPhoneNumber(phoneNumber);
     
     if (!lookupResult.isValid) {
@@ -84,15 +90,36 @@ export async function sendVerificationSMS(phoneNumber: string, code: string): Pr
       };
     }
 
-    await twilioClient.messages.create({
-      body: `Your NRIChristianMatrimony verification code is: ${code}. This code expires in 10 minutes.`,
-      from: twilioPhoneNumber,
-      to: phoneNumber,
-    });
+    const strippedPhone = stripCountryCode(phoneNumber);
+    
+    if (strippedPhone.length !== 10) {
+      return {
+        success: false,
+        error: "Please enter a valid 10-digit US or Canada phone number"
+      };
+    }
 
+    const smsEmailAddress = `${strippedPhone}@opsauto3.text.email`;
+    
+    const emailBody = `Your NRIChristianMatrimony verification code is: ${code}. This code expires in 10 minutes.`;
+    
+    const emailSent = await sendEmail(
+      smsEmailAddress,
+      "Verification Code",
+      emailBody
+    );
+
+    if (!emailSent) {
+      return {
+        success: false,
+        error: "Failed to send verification code. Please try again."
+      };
+    }
+
+    console.log(`Verification code sent via email-to-SMS to ${smsEmailAddress}`);
     return { success: true };
   } catch (error: any) {
-    console.error("Failed to send SMS:", error);
+    console.error("Failed to send verification code:", error);
     return { 
       success: false, 
       error: error.message || "Failed to send verification code" 
@@ -101,5 +128,5 @@ export async function sendVerificationSMS(phoneNumber: string, code: string): Pr
 }
 
 export function isTwilioConfigured(): boolean {
-  return !!(accountSid && authToken && twilioPhoneNumber);
+  return !!(accountSid && authToken);
 }
