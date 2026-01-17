@@ -42,9 +42,10 @@ export default function ProfileDetail() {
 
   const displayId = getDisplayProfileId(profile.id);
   const age = calculateAge(profile.birthMonth, profile.birthYear);
-  const fullName = `${profile.firstName || ""} ${profile.lastName || ""}`.trim();
-  const initials = `${profile.firstName?.charAt(0) || ""}${profile.lastName?.charAt(0) || ""}`.toUpperCase();
-  const photoUrl = profile.photoUrl || `https://ui-avatars.com/api/?name=${initials}&background=fde68a&color=92400e&size=400`;
+  const firstInitial = profile.firstName?.charAt(0)?.toUpperCase() || "";
+  const lastInitial = profile.lastName?.charAt(0)?.toUpperCase() || "";
+  const initials = `${firstInitial}.${lastInitial}`;
+  const photoUrl = profile.photoUrl || `https://ui-avatars.com/api/?name=${firstInitial}${lastInitial}&background=fde68a&color=92400e&size=400`;
 
   return (
     <Layout>
@@ -135,7 +136,7 @@ export default function ProfileDetail() {
             <div>
               <div className="flex items-center gap-4 mb-2 flex-wrap">
                 <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground" data-testid="text-profile-name">
-                  {isAuthenticated ? fullName : displayId}
+                  {initials} - {displayId}
                 </h1>
                 {profile.phoneVerified && (
                   <Badge className="bg-green-600 hover:bg-green-700">
@@ -143,11 +144,6 @@ export default function ProfileDetail() {
                   </Badge>
                 )}
               </div>
-              {!isAuthenticated && (
-                <p className="text-sm text-muted-foreground mb-2">
-                  Login to view full name and contact details
-                </p>
-              )}
               <p className="text-xl text-muted-foreground mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
                 <span className="flex items-center gap-2">
                   <User className="w-5 h-5" /> 
