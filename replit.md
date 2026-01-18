@@ -54,9 +54,14 @@ Routes are defined in `shared/routes.ts` with Zod schemas for input validation. 
 - `GET /api/auth/user` - Get current authenticated user
 
 ### Admin API Endpoints
-- `GET /api/admin/profiles` - Get all profiles (admin only)
+- `POST /api/admin/login` - Admin-specific login (validates credentials + admin status)
+- `GET /api/admin/check` - Check if current user is admin
+- `GET /api/admin/profiles` - Get all profiles with full details (admin only)
 - `POST /api/admin/set-admin` - Set user admin status (admin only)
 - `POST /api/admin/send-login-report` - Manually trigger login report (admin only)
+
+### Express Interest API
+- `POST /api/express-interest` - Express interest in a profile (sends email notification to opsauto3@gmail.com)
 
 ## External Dependencies
 
@@ -106,6 +111,8 @@ Routes are defined in `shared/routes.ts` with Zod schemas for input validation. 
 - To expand to other countries, uncomment the country options in both files
 
 ### Admin Features
+- Separate admin login page at `/admin-login`
+- Admin dashboard at `/admin` shows full profile data (names, phones, etc.)
 - Admin users can edit any profile (not just their own)
 - Admin flag stored in `users.is_admin` column
 - To make a user an admin, run SQL: `UPDATE users SET is_admin = true WHERE email = 'admin@example.com';`
@@ -118,5 +125,8 @@ All profile fields are now mandatory except:
 - `createdByName` (only required when createdBy is not "Self")
 
 ### Privacy Features
-- Search results show "Profile #ID" instead of full names
-- Full name only visible on detailed profile page after clicking
+- All profile listings show initials only (e.g., "S.K. - NRI14702") - never full names
+- Profile ID format: NRI + 14700 + database_id (e.g., NRI14701, NRI14702)
+- Contact details hidden until mutual interest via "Express Interest" flow
+- "Express Interest" button sends email to opsauto3@gmail.com with both profiles' details
+- Only admins can see full names and contact details via admin dashboard
