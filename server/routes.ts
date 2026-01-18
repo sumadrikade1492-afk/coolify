@@ -9,7 +9,7 @@ import { storage } from "./storage";
 import { api, phoneVerificationApi } from "@shared/routes";
 import { z } from "zod";
 import { generateVerificationCode, sendVerificationSMS, isTwilioConfigured } from "./twilio";
-import { sendProfileNotification, sendDailyLoginReport } from "./gmail";
+import { sendProfileNotification, sendDailyLoginReport, sendExpressInterestNotification } from "./gmail";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -233,6 +233,58 @@ export async function registerRoutes(
 
   // Admin Routes
   
+  // Admin login - separate endpoint for admin authentication
+  app.post("/api/admin/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ success: false, message: "Email and password required" });
+      }
+      
+      // Use authService to validate login
+      const { findUserByEmail, verifyPassword } = await import("./auth-service");
+      const user = await findUserByEmail(email);
+      
+      if (!user || !user.passwordHash) {
+        return res.status(401).json({ success: false, message: "Invalid credentials" });
+      }
+      
+      const isPasswordValid = await verifyPassword(password, user.passwordHash);
+      if (!isPasswordValid) {
+        return res.status(401).json({ success: false, message: "Invalid credentials" });
+      }
+      
+      // Check if user is admin
+      const isAdmin = await storage.isUserAdmin(user.id);
+      if (!isAdmin) {
+        return res.status(403).json({ success: false, message: "Admin access required" });
+      }
+      
+      // Set session
+      req.session.userId = user.id;
+      
+      res.json({ success: true, user: { id: user.id, email: user.email } });
+    } catch (error) {
+      console.error("Admin login error:", error);
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  });
+  
+  // Check if current user is admin
+  app.get("/api/admin/check", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.json({ isAdmin: false });
+      }
+      
+      const isAdmin = await storage.isUserAdmin(req.session.userId);
+      res.json({ isAdmin });
+    } catch (error) {
+      res.json({ isAdmin: false });
+    }
+  });
+  
   // Get all profiles (admin only)
   app.get("/api/admin/profiles", isAuthenticated, async (req, res) => {
     try {
@@ -288,6 +340,64 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Failed to send login report:", error);
       res.status(500).json({ message: "Failed to send login report" });
+    }
+  });
+
+  // Express Interest endpoint
+  app.post("/api/express-interest", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { targetProfileId } = req.body;
+      
+      if (!targetProfileId) {
+        return res.status(400).json({ message: "Target profile ID required" });
+      }
+      
+      // Get the user's profile
+      const userProfile = await storage.getProfileByUserId(userId);
+      if (!userProfile) {
+        return res.status(400).json({ message: "You need to create a profile first" });
+      }
+      
+      // Get the target profile
+      const targetProfile = await storage.getProfile(Number(targetProfileId));
+      if (!targetProfile) {
+        return res.status(404).json({ message: "Target profile not found" });
+      }
+      
+      // Don't allow expressing interest in own profile
+      if (userProfile.id === targetProfile.id) {
+        return res.status(400).json({ message: "Cannot express interest in your own profile" });
+      }
+      
+      // Send email notification
+      try {
+        await sendExpressInterestNotification(
+          userProfile.id,
+          {
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+            gender: userProfile.gender,
+            city: userProfile.city,
+            country: userProfile.country,
+          },
+          targetProfile.id,
+          {
+            firstName: targetProfile.firstName,
+            lastName: targetProfile.lastName,
+            gender: targetProfile.gender,
+            city: targetProfile.city,
+            country: targetProfile.country,
+          }
+        );
+      } catch (emailError) {
+        console.error("Failed to send express interest email:", emailError);
+      }
+      
+      res.json({ success: true, message: "Interest expressed successfully" });
+    } catch (error) {
+      console.error("Express interest error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
 

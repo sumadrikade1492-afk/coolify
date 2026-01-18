@@ -6,6 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { MapPin, Church, User, Heart, ArrowLeft, Loader2, CheckCircle, Mail, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 function getDisplayProfileId(id: number): string {
   return `NRI${14700 + id}`;
@@ -28,6 +32,35 @@ export default function ProfileDetail() {
   const id = parseInt(params?.id || "0");
   const { data: profile, isLoading } = useProfile(id);
   const { isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const [hasExpressedInterest, setHasExpressedInterest] = useState(false);
+
+  const expressInterestMutation = useMutation({
+    mutationFn: async (targetProfileId: number) => {
+      const response = await apiRequest("POST", "/api/express-interest", { targetProfileId });
+      return response.json();
+    },
+    onSuccess: () => {
+      setHasExpressedInterest(true);
+      toast({
+        title: "Interest Expressed",
+        description: "Your interest has been sent. You'll be notified if there's mutual interest.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Unable to Express Interest",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleExpressInterest = () => {
+    if (profile) {
+      expressInterestMutation.mutate(profile.id);
+    }
+  };
 
   if (isLoading) return <Layout><div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-primary w-10 h-10" /></div></Layout>;
   
@@ -68,8 +101,26 @@ export default function ProfileDetail() {
                
                <div className="space-y-3">
                  {isAuthenticated ? (
-                   <Button className="w-full text-lg h-12" size="lg" data-testid="button-express-interest">
-                     <Heart className="w-5 h-5 mr-2" /> Express Interest
+                   <Button 
+                     className="w-full text-lg h-12" 
+                     size="lg" 
+                     data-testid="button-express-interest"
+                     onClick={handleExpressInterest}
+                     disabled={expressInterestMutation.isPending || hasExpressedInterest}
+                   >
+                     {expressInterestMutation.isPending ? (
+                       <>
+                         <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Sending...
+                       </>
+                     ) : hasExpressedInterest ? (
+                       <>
+                         <CheckCircle className="w-5 h-5 mr-2" /> Interest Sent
+                       </>
+                     ) : (
+                       <>
+                         <Heart className="w-5 h-5 mr-2" /> Express Interest
+                       </>
+                     )}
                    </Button>
                  ) : (
                    <Link href="/login">
@@ -78,10 +129,6 @@ export default function ProfileDetail() {
                      </Button>
                    </Link>
                  )}
-                 
-                 <Button variant="outline" className="w-full" data-testid="button-shortlist">
-                   <Heart className="w-4 h-4 mr-2" /> Shortlist
-                 </Button>
                </div>
             </Card>
 
@@ -248,8 +295,21 @@ export default function ProfileDetail() {
                 <p className="text-muted-foreground mb-4">
                   To protect privacy, contact details are shared only after mutual interest is expressed.
                 </p>
-                <Button className="w-full md:w-auto" data-testid="button-request-contact">
-                  <Heart className="w-4 h-4 mr-2" /> Express Interest to Connect
+                <Button 
+                  className="w-full md:w-auto" 
+                  data-testid="button-request-contact"
+                  onClick={handleExpressInterest}
+                  disabled={expressInterestMutation.isPending || hasExpressedInterest}
+                >
+                  {hasExpressedInterest ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" /> Interest Sent
+                    </>
+                  ) : (
+                    <>
+                      <Heart className="w-4 h-4 mr-2" /> Express Interest to Connect
+                    </>
+                  )}
                 </Button>
               </Card>
             )}

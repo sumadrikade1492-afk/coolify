@@ -112,6 +112,53 @@ export async function sendProfileNotification(
   await sendEmail('opsauto3@gmail.com', subject, htmlBody);
 }
 
+export async function sendExpressInterestNotification(
+  fromProfileId: number,
+  fromProfileData: {
+    firstName: string | null;
+    lastName: string | null;
+    gender: string | null;
+    city: string | null;
+    country: string | null;
+  },
+  toProfileId: number,
+  toProfileData: {
+    firstName: string | null;
+    lastName: string | null;
+    gender: string | null;
+    city: string | null;
+    country: string | null;
+  }
+): Promise<void> {
+  const displayFromId = `NRI${14700 + fromProfileId}`;
+  const displayToId = `NRI${14700 + toProfileId}`;
+  
+  const subject = `Interest Expressed: ${displayFromId} interested in ${displayToId}`;
+  
+  const htmlBody = `
+    <h2>Interest Expressed</h2>
+    <p>A member has expressed interest in another profile.</p>
+    
+    <h3>From Profile:</h3>
+    <p><strong>Profile ID:</strong> ${displayFromId}</p>
+    <p><strong>Name:</strong> ${fromProfileData.firstName || 'N/A'} ${fromProfileData.lastName || ''}</p>
+    <p><strong>Gender:</strong> ${fromProfileData.gender || 'N/A'}</p>
+    <p><strong>Location:</strong> ${fromProfileData.city || 'N/A'}, ${fromProfileData.country || 'N/A'}</p>
+    
+    <h3>To Profile:</h3>
+    <p><strong>Profile ID:</strong> ${displayToId}</p>
+    <p><strong>Name:</strong> ${toProfileData.firstName || 'N/A'} ${toProfileData.lastName || ''}</p>
+    <p><strong>Gender:</strong> ${toProfileData.gender || 'N/A'}</p>
+    <p><strong>Location:</strong> ${toProfileData.city || 'N/A'}, ${toProfileData.country || 'N/A'}</p>
+    
+    <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+    <hr>
+    <p><em>This is an automated notification from NRIChristianMatrimony.</em></p>
+  `;
+
+  await sendEmail('opsauto3@gmail.com', subject, htmlBody);
+}
+
 export async function sendDailyLoginReport(logins: Array<{
   userId: string | null;
   username: string;

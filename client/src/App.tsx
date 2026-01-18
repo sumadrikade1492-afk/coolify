@@ -13,6 +13,8 @@ import MyProfile from "@/pages/my-profile";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import ForgotPassword from "@/pages/forgot-password";
+import AdminLogin from "@/pages/admin-login";
+import AdminDashboard from "@/pages/admin-dashboard";
 
 function Router() {
   return (
@@ -26,6 +28,8 @@ function Router() {
       <Route path="/edit-profile/:id" component={EditProfile} />
       <Route path="/profile/:id" component={ProfileDetail} />
       <Route path="/my-profile" component={MyProfile} />
+      <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
