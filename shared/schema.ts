@@ -31,6 +31,18 @@ export const profiles = pgTable("profiles", {
   createdBy: text("created_by"), // 'Self', 'Parent', etc.
   createdByName: text("created_by_name"), // Name of person who created profile if not self (optional when Self)
   createdAt: timestamp("created_at").defaultNow(),
+  // Arranged marriage specific fields
+  education: text("education"), // Bachelor's, Master's, PhD, etc.
+  maritalStatus: text("marital_status"), // Never Married, Divorced, Widowed
+  hasChildren: text("has_children"), // No, Yes - lives with me, Yes - doesn't live with me
+  familyType: text("family_type"), // Nuclear, Joint, Extended
+  diet: text("diet"), // Vegetarian, Non-vegetarian, Eggetarian
+  drinking: text("drinking"), // Never, Occasionally, Regularly
+  smoking: text("smoking"), // Never, Occasionally, Regularly
+  willingToRelocate: text("willing_to_relocate"), // Yes, No, Maybe
+  fathersOccupation: text("fathers_occupation"),
+  mothersOccupation: text("mothers_occupation"),
+  siblings: text("siblings"), // Number/description of siblings
 });
 
 export const phoneVerifications = pgTable("phone_verifications", {

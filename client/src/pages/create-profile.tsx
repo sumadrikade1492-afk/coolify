@@ -41,6 +41,17 @@ const formSchema = insertProfileSchema.extend({
   phoneNumber: z.string().min(10, "Valid phone number is required"),
   createdBy: z.string().min(1, "Please specify who is creating this profile"),
   createdByName: z.string().optional(),
+  education: z.string().min(1, "Education is required"),
+  maritalStatus: z.string().min(1, "Marital status is required"),
+  hasChildren: z.string().optional(),
+  familyType: z.string().min(1, "Family type is required"),
+  diet: z.string().min(1, "Diet preference is required"),
+  drinking: z.string().min(1, "Please specify drinking habits"),
+  smoking: z.string().min(1, "Please specify smoking habits"),
+  willingToRelocate: z.string().min(1, "Please specify willingness to relocate"),
+  fathersOccupation: z.string().optional(),
+  mothersOccupation: z.string().optional(),
+  siblings: z.string().optional(),
 }).refine((data) => {
   if (data.denomination === "Other" && (!data.otherDenomination || data.otherDenomination.trim() === "")) {
     return false;
@@ -57,6 +68,14 @@ const formSchema = insertProfileSchema.extend({
 }, {
   message: "Please provide the name of the person creating this profile",
   path: ["createdByName"],
+}).refine((data) => {
+  if (data.maritalStatus !== "Never Married" && (!data.hasChildren || data.hasChildren.trim() === "")) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Please specify if you have children",
+  path: ["hasChildren"],
 });
 
 export default function CreateProfile() {
@@ -93,6 +112,17 @@ export default function CreateProfile() {
       createdBy: "Self",
       createdByName: "",
       phoneNumber: "",
+      education: "",
+      maritalStatus: "",
+      hasChildren: "",
+      familyType: "",
+      diet: "",
+      drinking: "",
+      smoking: "",
+      willingToRelocate: "",
+      fathersOccupation: "",
+      mothersOccupation: "",
+      siblings: "",
     }
   });
 
@@ -612,6 +642,265 @@ export default function CreateProfile() {
                         </FormItem>
                       );
                     }}
+                  />
+                </div>
+              </div>
+
+              {/* Background & Lifestyle */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2 text-primary">Background & Lifestyle</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="education"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Highest Education</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-education">
+                              <SelectValue placeholder="Select education" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="High School">High School</SelectItem>
+                            <SelectItem value="Diploma">Diploma</SelectItem>
+                            <SelectItem value="Bachelor's">Bachelor's Degree</SelectItem>
+                            <SelectItem value="Master's">Master's Degree</SelectItem>
+                            <SelectItem value="PhD">PhD / Doctorate</SelectItem>
+                            <SelectItem value="MD">MD (Medical Doctor)</SelectItem>
+                            <SelectItem value="MBA">MBA</SelectItem>
+                            <SelectItem value="Other Professional">Other Professional Degree</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="maritalStatus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Marital Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-marital-status">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Never Married">Never Married</SelectItem>
+                            <SelectItem value="Divorced">Divorced</SelectItem>
+                            <SelectItem value="Widowed">Widowed</SelectItem>
+                            <SelectItem value="Annulled">Annulled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="hasChildren"
+                    render={({ field }) => {
+                      const maritalStatus = form.watch("maritalStatus");
+                      const showField = maritalStatus && maritalStatus !== "Never Married";
+                      return (
+                        <FormItem>
+                          <FormLabel>Do you have children?</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value || ""} 
+                            disabled={!showField}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-has-children">
+                                <SelectValue placeholder={showField ? "Select..." : "Only for divorced/widowed"} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="No">No children</SelectItem>
+                              <SelectItem value="Yes - lives with me">Yes - lives with me</SelectItem>
+                              <SelectItem value="Yes - doesn't live with me">Yes - doesn't live with me</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="familyType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Family Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-family-type">
+                              <SelectValue placeholder="Select family type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Nuclear">Nuclear Family</SelectItem>
+                            <SelectItem value="Joint">Joint Family</SelectItem>
+                            <SelectItem value="Extended">Extended Family</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="diet"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Diet Preference</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-diet">
+                              <SelectValue placeholder="Select diet" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Vegetarian">Vegetarian</SelectItem>
+                            <SelectItem value="Non-Vegetarian">Non-Vegetarian</SelectItem>
+                            <SelectItem value="Eggetarian">Eggetarian</SelectItem>
+                            <SelectItem value="Vegan">Vegan</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="drinking"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Drinking</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-drinking">
+                              <SelectValue placeholder="Select..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Never">Never</SelectItem>
+                            <SelectItem value="Occasionally">Occasionally</SelectItem>
+                            <SelectItem value="Regularly">Regularly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="smoking"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Smoking</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-smoking">
+                              <SelectValue placeholder="Select..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Never">Never</SelectItem>
+                            <SelectItem value="Occasionally">Occasionally</SelectItem>
+                            <SelectItem value="Regularly">Regularly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="willingToRelocate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Willing to Relocate?</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-relocate">
+                              <SelectValue placeholder="Select..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Yes">Yes</SelectItem>
+                            <SelectItem value="No">No</SelectItem>
+                            <SelectItem value="Maybe">Maybe / Depends</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* Family Details */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2 text-primary">Family Details (Optional)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="fathersOccupation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Father's Occupation</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g., Retired Teacher, Business" 
+                            value={field.value || ""} 
+                            onChange={field.onChange}
+                            data-testid="input-fathers-occupation"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="mothersOccupation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mother's Occupation</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g., Homemaker, Nurse" 
+                            value={field.value || ""} 
+                            onChange={field.onChange}
+                            data-testid="input-mothers-occupation"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="siblings"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Siblings</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g., 1 elder brother (married), 1 younger sister" 
+                            value={field.value || ""} 
+                            onChange={field.onChange}
+                            data-testid="input-siblings"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
               </div>
