@@ -10,6 +10,7 @@ import { api, phoneVerificationApi } from "@shared/routes";
 import { z } from "zod";
 import { generateVerificationCode, sendVerificationSMS, isTwilioConfigured } from "./twilio";
 import { sendProfileNotification, sendDailyLoginReport, sendExpressInterestNotification } from "./gmail";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -40,6 +41,9 @@ export async function registerRoutes(
 
   // Auth Routes
   app.use("/api/auth", authRoutes);
+
+  // Object Storage Routes
+  registerObjectStorageRoutes(app);
 
   // Profile Routes
 

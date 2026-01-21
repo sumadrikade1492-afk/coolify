@@ -12,12 +12,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card } from "@/components/ui/card";
 import { insertProfileSchema } from "@shared/schema";
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
-import { Loader2, HelpCircle, Phone, CheckCircle } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Loader2, HelpCircle, Phone, CheckCircle, Upload, X, Camera } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useUpload } from "@/hooks/use-upload";
 
 const currentYear = new Date().getFullYear();
 const formSchema = insertProfileSchema.extend({
@@ -87,6 +88,50 @@ export default function CreateProfile() {
   const [verifyingPhone, setVerifyingPhone] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [pendingPhoneNumber, setPendingPhoneNumber] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoPreview, setPhotoPreview] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { uploadFile, isUploading: isUploadingPhoto } = useUpload({
+    onSuccess: (response) => {
+      setPhotoUrl(response.objectPath);
+      toast({ title: "Photo uploaded", description: "Your photo has been uploaded successfully" });
+    },
+    onError: (error) => {
+      toast({ title: "Upload failed", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please select an image file", variant: "destructive" });
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Please select an image under 5MB", variant: "destructive" });
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPhotoPreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+    
+    await uploadFile(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoUrl("");
+    setPhotoPreview("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -170,7 +215,7 @@ export default function CreateProfile() {
       toast({ title: "Phone verification required", description: "Please verify your phone number before creating a profile", variant: "destructive" });
       return;
     }
-    mutate(data, {
+    mutate({ ...data, photoUrl: photoUrl || "" }, {
       onSuccess: () => {
         setLocation("/my-profile");
       }
@@ -206,6 +251,73 @@ export default function CreateProfile() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               
+              {/* Photo Upload */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2 text-primary">Profile Photo</h3>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative">
+                    {photoPreview ? (
+                      <div className="relative">
+                        <img 
+                          src={photoPreview} 
+                          alt="Profile preview" 
+                          className="w-32 h-40 object-cover rounded-lg border-2 border-primary/20"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                          onClick={handleRemovePhoto}
+                          data-testid="button-remove-photo"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                        {isUploadingPhoto && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+                            <Loader2 className="h-6 w-6 text-white animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div 
+                        className="w-32 h-40 border-2 border-dashed border-muted-foreground/30 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Camera className="h-8 w-8 text-muted-foreground mb-2" />
+                        <span className="text-xs text-muted-foreground">Add Photo</span>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoSelect}
+                    data-testid="input-photo-upload"
+                  />
+                  {!photoPreview && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingPhoto}
+                      data-testid="button-upload-photo"
+                    >
+                      {isUploadingPhoto ? (
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</>
+                      ) : (
+                        <><Upload className="mr-2 h-4 w-4" /> Upload Photo</>
+                      )}
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground text-center">
+                    Upload a clear photo of yourself. Max 5MB. (Optional)
+                  </p>
+                </div>
+              </div>
+
               {/* Basic Info */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold border-b pb-2 text-primary">Basic Information</h3>

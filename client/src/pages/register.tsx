@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 
@@ -18,6 +19,9 @@ const registerSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string(),
+  agreeToTerms: z.boolean().refine(val => val === true, {
+    message: "You must agree to the Terms and Conditions",
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -42,7 +46,7 @@ export default function RegisterPage() {
 
   const registerForm = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { firstName: "", lastName: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { firstName: "", lastName: "", email: "", password: "", confirmPassword: "", agreeToTerms: false },
   });
 
   const verifyEmailForm = useForm<VerifyEmailFormData>({
@@ -79,10 +83,13 @@ export default function RegisterPage() {
       });
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    onSuccess: async () => {
+      // Wait for auth query to refresh before navigating
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/user"] });
       toast({ title: "Account created!", description: "Now let's create your profile" });
-      navigate("/create-profile");
+      // Small delay to ensure session cookie is fully set
+      setTimeout(() => navigate("/create-profile"), 100);
     },
     onError: (error: Error) => {
       toast({ title: "Verification failed", description: error.message, variant: "destructive" });
@@ -214,6 +221,30 @@ export default function RegisterPage() {
                           </div>
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={registerForm.control}
+                    name="agreeToTerms"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="checkbox-terms"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal cursor-pointer">
+                            I agree to the{" "}
+                            <Link href="/terms" className="text-primary hover:underline font-medium" data-testid="link-terms">
+                              Terms and Conditions
+                            </Link>
+                          </FormLabel>
+                          <FormMessage />
+                        </div>
                       </FormItem>
                     )}
                   />

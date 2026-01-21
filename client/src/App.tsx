@@ -15,6 +15,7 @@ import Register from "@/pages/register";
 import ForgotPassword from "@/pages/forgot-password";
 import AdminLogin from "@/pages/admin-login";
 import AdminDashboard from "@/pages/admin-dashboard";
+import Terms from "@/pages/terms";
 
 function Router() {
   return (
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/terms" component={Terms} />
       <Route path="/profiles" component={Profiles} />
       <Route path="/create-profile" component={CreateProfile} />
       <Route path="/edit-profile/:id" component={EditProfile} />
