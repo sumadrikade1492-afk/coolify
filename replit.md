@@ -118,11 +118,31 @@ Routes are defined in `shared/routes.ts` with Zod schemas for input validation. 
 - To make a user an admin, run SQL: `UPDATE users SET is_admin = true WHERE email = 'admin@example.com';`
 - Admin can access `/api/admin/*` endpoints
 
+### Profile Fields - Arranged Marriage Details
+Comprehensive profile fields for arranged marriage matching:
+
+**Background & Lifestyle (Required)**:
+- `education`: Highest education level (High School to PhD/MD/MBA)
+- `maritalStatus`: Never Married, Divorced, Widowed, Annulled
+- `hasChildren`: Only required when maritalStatus is not "Never Married"
+- `familyType`: Nuclear, Joint, or Extended Family
+- `diet`: Vegetarian, Non-Vegetarian, Eggetarian, Vegan
+- `drinking`: Never, Occasionally, Regularly
+- `smoking`: Never, Occasionally, Regularly
+- `willingToRelocate`: Yes, No, Maybe
+
+**Family Details (Optional)**:
+- `fathersOccupation`: Father's current/past occupation
+- `mothersOccupation`: Mother's current/past occupation
+- `siblings`: Description of siblings (e.g., "1 elder brother (married), 1 younger sister")
+
 ### Mandatory Profile Fields
 All profile fields are now mandatory except:
 - `photoUrl` (optional photo upload)
 - `otherDenomination` (only required when denomination is "Other")
 - `createdByName` (only required when createdBy is not "Self")
+- `hasChildren` (only required when maritalStatus is not "Never Married")
+- `fathersOccupation`, `mothersOccupation`, `siblings` (optional family details)
 
 ### Privacy Features
 - All profile listings show initials only (e.g., "S.K. - NRI14702") - never full names
