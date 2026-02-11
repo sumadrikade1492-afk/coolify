@@ -1,0 +1,50 @@
+
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nri-christian-matrimony
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+      - PORT=5001
+      # Database URL - update with your actual database URL
+      - DATABASE_URL=${DATABASE_URL}
+      # Session Secret - update or set in .env file
+      - SESSION_SECRET=${SESSION_SECRET:-nri-christian-matrimony-secret-change-in-production}
+      # Optional: Google OAuth
+      # - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      # - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      # Optional: Twilio
+      # - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      # - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      # - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+    env_file:
+      - /.env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  # Optional: Uncomment to run PostgreSQL in Docker
+  # postgres:
+  #   image: postgres:16-alpine
+  #   container_name: nri-matrimony-db
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_DB=nrichristianmatrimony
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   restart: unless-stopped
+
+# volumes:
+#   postgres_data:
