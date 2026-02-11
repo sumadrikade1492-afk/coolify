@@ -18,7 +18,10 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Trust proxy for production (needed for secure cookies behind reverse proxy)
   app.set("trust proxy", 1);
-
+// ✅ ADD THIS BELOW
+app.get("/", (req, res) => {
+  res.send("NRI Christian Matrimony Server is running 🚀");
+});
   // Setup Session
   const PgStore = connectPgSimple(session);
   app.use(
